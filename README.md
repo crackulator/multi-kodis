@@ -42,7 +42,7 @@ All the work is done by a couple of perl programs, but the following shell scrip
 
 ### Requirements
 
-(todo, honest I will... offhand, you'll need wmctrl, xdotool, and perl Term::ReadKey)
+(todo, honest I will... offhand, you'll need wmctrl, xdotool, and perl Term::ReadKey, and you may have to do something about $DISPLAY and XAUTHORITY environment variables, details forthcoming)
 
 ### Limitations and Caveats
 
