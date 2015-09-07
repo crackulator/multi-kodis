@@ -36,7 +36,7 @@ All the work is done by a couple of perl programs, but the following shell scrip
 	
 		`swap 1 5` - swap the contents of windows 'Kodi 1' and 'Kodi 5'
 
-	(Note: It actually just moves the windows, and renumbers them, so you can swap even with live content running. If the window contents are the same, nothing will seem to change. Swaps are 'sticky'; you can do more swaps all you want.)
+	(Note: It actually just moves/resizes the windows, and renumbers them, so you can swap even with live content running. If the window contents are the same, nothing will seem to change. Swaps are 'sticky'; you can do more swaps all you want.)
 
 5. **remote** - remote-control all or some of your Kodi windows from the keyboard
 
