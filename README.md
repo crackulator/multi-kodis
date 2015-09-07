@@ -30,7 +30,7 @@ All the work is done by a couple of perl programs, but the following shell scrip
 	
 		`sel 3` - select and highlight the window 'Kodi 3'
 
-4. **swap** - swap the content of two Kodi windows
+4. **swap** - swap the contents of two Kodi windows
 
 	Example:
 	
