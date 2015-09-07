@@ -5,10 +5,7 @@ use Data::Dumper qw(Dumper);
 my $debug = 0;
 
 #default
-my $num_kodis = 4;
-my $margin_ratio = 0.0125;
-my $window_ratio = 0.563;
-my $titlebar_height = 28;	# empirical; if this is off, the 'swap' function will get the y-coordinates wrong
+my $num_kodis;
 
 my %kodis;
 
@@ -24,8 +21,18 @@ my $offset_width;
 my $offset_height;
 
 my %specials;
+my %settings;
 
 ReadSettings ("settings");
+
+my $margin_ratio = $settings{"margin_ratio"};
+my $window_ratio = $settings{"window_ratio"};
+my $titlebar_height = $settings{"titlebar_height"};
+
+debug_print ("Settings values:\n");
+while (($key, $value) = each %settings) {
+	debug_print ("$key: $value\n");
+}
 
 my $efficiency;
 
@@ -142,12 +149,13 @@ if ($kodisfound == $num_kodis) {
 
 if ($kodisfound < $num_kodis) {
 	print ", need ".($num_kodis-$kodisfound)." more.\n";
+	PositionKodis ();
 	for (my $i=0;$i<($num_kodis-$kodisfound);$i++) {
 		print "Starting a kodi...\n";
 		# enforce between-kodis wait, but not on first one
-		if ($i != 0) { sleep (10); }
+		if ($i != 0) { sleep ($settings{"delay_between_kodi_opens"}); }
 		system ("kodi &");
-		sleep (10);
+		sleep ($settings{"delay_between_open_and_positioning"});
 		PositionKodis ();
 		# don't wait the final startup if this is the last one
 		# it's only for between opening one kodi and the next
@@ -158,10 +166,9 @@ if ($kodisfound > $num_kodis) {
 	print ", need to remove ".($kodisfound-$num_kodis)."\n";
 	for (my $i=$kodisfound;$i>$num_kodis;$i=$i-1) {
 		print "Removing a kodi...\n";
-		RunCommand ("wmctrl -i -c ".$kodis[$i-1]);
-		sleep (5);
+		RunCommand ("wmctrl -i -c ".$kodis{$i});
+		sleep ($settings{"delay_between_kodi_closes"});
 	}
-	# sleep (15);
 	PositionKodis ();
 }
 
@@ -355,7 +362,18 @@ sub FindKodis {
 	my @lines   = split /\n/ => $output;
 	for my $line (@lines) {
 		#print $line . "\n";
-		if ($line =~ /^([x0-9a-f]+).*\sKodi(\s(\d+))?$/) { $kodis{int($3)} = $1; }
+		if ($line =~ /^([x0-9a-f]+).*\sKodi(\s(\d+))?$/) { 
+			$key = int($3);
+			# the possibility exists that Kodis are open that we didn't start, so they have no number
+			# they are probably just called 'Kodi', so the $key at this point would be zero
+			# we need them to still have a place in the hash, so we need to find a number for them
+			# chances are, they will have higher window id's, so they will come after any ones that we've already numbered
+			#   - which would be ideal, because then they will be the first to be removed
+			# but the possibility also exists that they will end up interleaving in among ours, since the window numbers aren't guaranteed
+			if ($key == 0) { $key = 1; }
+			while (exists ($kodis{$key})) { $key = $key + 1; }
+			$kodis{$key} = $1; 
+		}
 	}
 	return %kodis;
 }
@@ -399,7 +417,7 @@ sub ReadSettings {
 	my $lastcomment;
 	my ($filename) = @_;
 	open(my $fh, '<:encoding(UTF-8)', $filename)
-		or die "Could not open file '$filename' $!";
+		or die "Could not open settings file '$filename' $!";
  
 	while (my $row = <$fh>) {
 		chomp $row;
@@ -409,6 +427,8 @@ sub ReadSettings {
 			my @arr = split(/\s+/,$2);
 			AddSpecial ($1,\@arr,$lastcomment);
 			$lastcomment = "";
+		} elsif ($row =~ /^\s*(.*?)\s*=\s*(.*?)$/) {
+			$settings{$1} = $2;
 		}
 	}
 }

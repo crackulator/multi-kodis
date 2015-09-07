@@ -1,3 +1,52 @@
+#################################
+# Settings file for multi.kodis #
+#################################
+
+# How much margin to enforce between windows, and at the screen edge
+# Expressed as a fraction of the total screen height or width
+# default value: 0.0125
+margin_ratio = 0.0125
+
+# Aspect ratio of the Kodi windows. All windows will be created with this aspect (not including title bar).
+# Expressed as a height/width: ie 16:9 (width:height) = 9/16 = 0.563
+# default value: 0.563 (standard 16:9 movie aspect ratio)
+window_ratio = 0.563
+
+# Height of the title bars, which needs to be included in some of the calculations
+# This might change depending on your desktop setup 
+# empirical; if this is off, the 'swap' function will move your windows in the y-direction
+titlebar_height = 28
+
+# Delay between adding new kodis
+# Empirically, some delay seems to be needed between starting kodis
+# This can be expensive if you are opening a lot of kodis in a row
+# Watch the CPU in System Monitor; if there's not enough delay, it seems to get stuck tangled up and use a lot of CPU for a long time
+# Might be system-dependent; you could certainly try 0 or 1 and see what happens
+# But keep an eye on the CPU monitor
+delay_between_kodi_opens = 10
+
+# Delay between starting a kodi and positioning it
+# Seems to need this before the window is ready to be positioned, empirically
+# Might be less on faster systems
+# This can also be expensive, since each kodi is positioned after it is opened
+delay_between_open_and_positioning = 10
+
+# Delay between successive kodi removes
+# I think it needs some time to wrap up its business, otherwise it gets unhappy
+# Seems to reduce the crashes when removing kodis
+# But some crashes seem to happen no matter what, even when closing the kodi windows manually
+delay_between_kodi_closes = 5
+
+# The special window arrangements
+# format: set [name] [grid] [window1 x,y,w,h] [window2 x,y,w,h] ...
+#   [name] - the name to identify this arrangement. Using a duplicate will overwrite the previous.
+#            if you use plain numbers (ie '8'), they will override the default arrangement for that number
+#   [grid] - expressed as 'WxH', the grid into which the windows are arranged.
+#   [x,y,w,h] - the placement and size of the window, relative to this grid. 0,0=top left, 1,1=one grid height and width.
+#      Note that the height and width are the 'available size' for the window, not necessarily its size.
+#      The aspect ratio is always enforced, so the window will be shrunk to fit the more restrictive dimension,
+#      	  and then centered within the available space.
+#      The last comment line before the specification will be used for the description in 'list'.
 
 # One tiny kodi, top right corner
 set 1t  4x4  3,0,1,1
