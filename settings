@@ -90,5 +90,5 @@ set 6d  4x3  0,0,2,2 2,0,2,2   0,2,1,1    1,2,1,1   2,2,1,1  3,2,1,1
 set 6db 4x3  0,1,2,2 2,1,2,2   0,0,1,1    1,0,1,1   2,0,1,1  3,0,1,1  
 # Ten kodis: 'dual' (two large), and eight smaller ones above and below
 set 10d 4x4  0,1,2,2 2,1,2,2   0,0,1,1    1,0,1,1   2,0,1,1  3,0,1,1 0,3,1,1 1,3,1,1 2,3,1,1 3,3,1,1 
-# Thirteen kodis: one large on in the middle, and twelve around the sides 
-set 13s 4x4  1,1,2,2 0,0,1,1   1,0,1,1    2,0,1,1   3,0,1,1  0,1,1,1 0,2,1,1 0,3,1,1 1,3,1,1 2,3,1,1 3,3,1,1 3,2,1,1 3,1,1,1
+# Thirteen kodis: one large one in the middle, and twelve around the sides 
+set 13s 4x4  1,1,2,2 0,0,1,1 1,0,1,1 2,0,1,1 3,0,1,1 0,1,1,1 3,1,1,1 0,2,1,1 3,2,1,1 0,3,1,1 1,3,1,1 2,3,1,1 3,3,1,1 
