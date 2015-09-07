@@ -1,0 +1,2 @@
+perl setup-n-kodis.pl swap $1 $2
+

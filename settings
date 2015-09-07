@@ -1,0 +1,45 @@
+
+# One tiny kodi, top right corner
+set 1t  4x4  3,0,1,1
+# One small kodi, top right corner
+set 1s  3x3  2,0,1,1  
+# One kodi, quarter-screen size, top right corner
+set 1q  2x2  1,0,1,1
+# Two tiny kodis along right edge
+set 2t  4x4  3,0,1,1 3,1,1,1
+# Two small kodis along right edge
+set 2s  3x3  2,0,1,1 2,1,1,1    
+# Three tiny kodis along right edge
+set 3t  4x4  3,0,1,1 3,1,1,1   3,2,1,1    
+# Four tiny kodis, on right edge
+set 4t  4x4  3,0,1,1 3,1,1,1   3,2,1,1    3,3,1,1    
+# Three small kodis on the right
+set 3s  3x3  0,0,3,2 0.5,2,1,1 1.5,2,1,1 
+# Four kodis: one large on the top, and three small ones
+set 4s  3x3  0,0,3,2 0,2,1,1   1,2,1,1    2,2,1,1    
+# Four kodis: a large one on the bottom, and three small ones above
+set 4sb 3x3  0,1,3,2 0,0,1,1   1,0,1,1    2,0,1,1    
+# Four kodis: a large one on the left, and three small ones on the right
+set 4sl 3x3  0,0,2,3 2,0,1,1   2,1,1,1    2,2,1,1    
+# Four kodis: a large on on the right, and three small ones on the left
+set 4sr 3x3  1,0,2,3 0,0,1,1   0,1,1,1    0,2,1,1    
+# Four kodis: 'dual' (two large) on top, two small ones below
+set 4d  4x3  0,0,2,2 2,0,2,2   0,2,2,1    2,2,2,1 
+# Four kodis: 'dual' (two large) on bottom, two small ones above
+set 4db 4x3  0,1,2,2 2,1,2,2   0,0,2,1    2,0,2,1    
+# Five kodis: a large one above, and four smaller ones below
+set 5s  4x4  0,0,4,3 0,3,1,1   1,3,1,1  2,3,1,1 3,3,1,1 
+# Five kodis: 'dual' (two large) on top, three small ones below
+set 5d  4x3  0,0,2,2 2,0,2,2   0.5,2,1,1  1.5,2,1,1 2.5,2,1,1 
+# Five kodis: 'dual' (two large) below, three small ones above
+set 5db 4x3  0,1,2,2 2,1,2,2   0.5,0,1,1  1.5,0,1,1 2.5,0,1,1 
+# Six kodis: one large on top left, and five smaller ones around the edge
+set 6s  3x3  0,0,2,2 2,0,1,1   2,1,1,1    2,2,1,1   0,2,1,1  1,2,1,1  
+# Six kodis: 'dual' (two large) on top, four small ones below
+set 6d  4x3  0,0,2,2 2,0,2,2   0,2,1,1    1,2,1,1   2,2,1,1  3,2,1,1  
+# Six kodis: 'dual' (two large) on bottom, four small ones above
+set 6db 4x3  0,1,2,2 2,1,2,2   0,0,1,1    1,0,1,1   2,0,1,1  3,0,1,1  
+# Ten kodis: 'dual' (two large), and eight smaller ones above and below
+set 10d 4x4  0,1,2,2 2,1,2,2   0,0,1,1    1,0,1,1   2,0,1,1  3,0,1,1 0,3,1,1 1,3,1,1 2,3,1,1 3,3,1,1 
+# Thirteen kodis: one large on in the middle, and twelve around the sides 
+set 13s 4x4  1,1,2,2 0,0,1,1   1,0,1,1    2,0,1,1   3,0,1,1  0,1,1,1 0,2,1,1 0,3,1,1 1,3,1,1 2,3,1,1 3,3,1,1 3,2,1,1 3,1,1,1
