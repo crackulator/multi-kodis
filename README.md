@@ -1,4 +1,4 @@
-# multi.kodis
+# multi-kodis
 Command-line tools for managing multiple Kodi windows on an Ubuntu/Linux desktop
 
 ### Supports the following features:
