@@ -42,7 +42,7 @@ if (($ENV{'DISPLAY'} eq "") || ($ENV{'XAUTHORITY'} eq "")) {
 	print "  or you may need to set them manually.\n";
 	print "You may be able to swag them in your .bashrc, thus:\n";
 	print " if [ -z \"\$DISPLAY\" ]; then DISPLAY=:0; export DISPLAY; fi\n";
-	print " if [ -z \"\$XAUTHORITY\" ]; then XAUTHORITY=/home/fritz/.Xauthority; export XAUTHORITY; fi\n";
+	print " if [ -z \"\$XAUTHORITY\" ]; then XAUTHORITY=/home/[user]/.Xauthority; export XAUTHORITY; fi\n";
 	print "(for nominal single-display cases)\n";
 	exit;
 }
@@ -134,6 +134,18 @@ if ($output =~ /(\d+)x(\d+).*\s(\d+),(\d+)*\s(\d+)x(\d+).*/) {
 	print "Couldn't interpret output from 'wmctrl -d'.\n";
 	print "Most likely, it is not installed, so you might need to do something like:\n";
 	print "  sudo apt-get install wmctrl\n";
+	exit ();
+}
+
+my $output = `xdotool getwindowfocus`;
+my $startingwindow;
+
+if ($output =~ /^(\d+)$/) {
+	$startingwindow = $1;
+} else {
+	print "Couldn't interpret output from 'xdotool getwindowfocus'.\n";
+	print "Most likely, it is not installed, so you might need to do something like:\n";
+	print "  sudo apt-get install xdotool\n";
 	exit ();
 }
 
@@ -327,8 +339,8 @@ sub PositionKodis {
 		}
 	}
 	
-	# set focus to first window
-	RunCommand ("wmctrl -i -a ".$kodis{1});
+	# set focus to where it was before we started
+	RunCommand ("wmctrl -i -a ".$startingwindow);
 		
 	$efficiency = $pixels / ($space_width * $space_height);
 	
