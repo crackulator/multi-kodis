@@ -261,32 +261,41 @@ sub PositionKodis {
 	my $row=0;
 	my $pixels=0;
 	
+	my @maxed;
+
 	foreach my $number (sort keys %kodis) {
 
 		$window = $kodis{$number};
-		
-		my $cell_row,$cell_col,$cell_width,$cell_height;
+				
+		my $type,$cell_row,$cell_col,$cell_width,$cell_height;
 
 		if ($special) {
 			my $s = $i+1;
 			debug_print ("s:".$s."\n");
 			debug_print ("spec: ".$spec[$s]."\n");
 			if ($spec[$s] =~ /^([0-9.]+),([0-9.]+),([0-9.]+),([0-9.]+)$/) {
+				$type = "Norm";
 				$cell_col = $1;
 				$cell_row = $2;
 				$cell_width = $3;
 				$cell_height = $4;
+			} elsif ((lc($spec[$s]) eq "full") || (lc($spec[$s]) eq "max")) {
+				$type = $spec[$s];
+				if (lc($spec[$s]) eq "max") {
+					push (@maxed,$window);
+				}
 			} else {
 				print "Couldn't interpret window dimensions: ".$spec[$s]."\n";
 				exit;
 			}
 		} else {
+			$type = "Norm";
 			$cell_col = $col;
 			$cell_row = $row;
 			$cell_width = 1;
 			$cell_height = 1;
 		}
-		
+
 		my $avail_width = ($xstep * $cell_width) - $xmargin;
 		my $avail_height = ($ystep * $cell_height) - $ymargin - $titlebar_height;
 		
@@ -295,40 +304,43 @@ sub PositionKodis {
 		my $w = $avail_width;
 		my $h = $avail_height;
 		
-		debug_print ( "cell width: $w\n");
-		debug_print ( "cell height: $h\n");
-		debug_print ( "cell x: $x\n");
-		debug_print ( "cell y: $y\n");
-		
-		if (($cell_width > 1) || ($cell_height > 1)) {
-			# we only have to do this for the large windows created in special cases
-			# for a normal grid of 1-cell windows, they are already taken care of by the global centering above
-			my $adj_height = $h / $window_ratio;
-			if ($w > $adj_height) {
-				# if scaled width is greater, use height
-				$w = $adj_height;
-				$x = $x + ($avail_width-$w)/2;
-				debug_print ("Limited by height.\n");
-			} else {
-				# if scaled height is greater, use width
-				$h = ($w * $window_ratio);
-				$y = $y + ($avail_height-$h)/2;
-				debug_print ("Limited by width.\n");
+		if ($type eq "Norm") {
+			
+			debug_print ( "cell width: $w\n");
+			debug_print ( "cell height: $h\n");
+			debug_print ( "cell x: $x\n");
+			debug_print ( "cell y: $y\n");
+			
+			if (($cell_width > 1) || ($cell_height > 1)) {
+				# we only have to do this for the large windows created in special cases
+				# for a normal grid of 1-cell windows, they are already taken care of by the global centering above
+				my $adj_height = $h / $window_ratio;
+				if ($w > $adj_height) {
+					# if scaled width is greater, use height
+					$w = $adj_height;
+					$x = $x + ($avail_width-$w)/2;
+					debug_print ("Limited by height.\n");
+				} else {
+					# if scaled height is greater, use width
+					$h = ($w * $window_ratio);
+					$y = $y + ($avail_height-$h)/2;
+					debug_print ("Limited by width.\n");
+				}
+			}
+			
+			debug_print ("selected width: $w\n");
+			debug_print ("selected height: $h\n");
+			debug_print ("selected x: $x\n");
+			debug_print ("selected y: $y\n");
+
+			if (!$special && ($row == $rows-1)) {
+				if ($current_kodis % $cols != 0) {
+					$x = $x + $xstep*($cols-($current_kodis%$cols))/2;
+				}
 			}
 		}
-		
-		debug_print ("selected width: $w\n");
-		debug_print ("selected height: $h\n");
-		debug_print ("selected x: $x\n");
-		debug_print ("selected y: $y\n");
 
-		if (!$special && ($row == $rows-1)) {
-			if ($current_kodis % $cols != 0) {
-				$x = $x + $xstep*($cols-($current_kodis%$cols))/2;
-			}
-		}
-
-		PositionWindow ("Kodi ".($i+1),$window,$x,$y,$w,$h);
+		PositionWindow ("Kodi ".($i+1),$window,$type,$x,$y,$w,$h);
 		$pixels = $pixels + ($w * $h);
 				
 		$i = $i + 1;
@@ -339,25 +351,42 @@ sub PositionKodis {
 		}
 	}
 	
-	# set focus to where it was before we started
-	RunCommand ("wmctrl -i -a ".$startingwindow);
+	# set focus to where it was before we started, unless said window is maximized
+	# in which case, we want it to stay on the bottom, where it already is
+	my $ismax = 0;
+	foreach my $m (@maxed) {
+		if ($startingwindow eq hex($m)) { $ismax = 1; }
+	}
+	if (!$ismax) {
+		RunCommand ("wmctrl -i -a ".$startingwindow);
+	}
 		
 	$efficiency = $pixels / ($space_width * $space_height);
 	
 }
 
 sub PositionWindow {
-	my ($name,$window, $x, $y, $width, $height) = @_;
-	my $coords = int($x).",".int($y).",".int($width).",".int($height);
-	debug_print ("Positioning $window\n");
+	my ($name,$window, $type, $x, $y, $width, $height) = @_;
+	if (lc($type) eq "full") {
+		RunCommand ("wmctrl -i -r $window -b add,fullscreen");
+		RunCommand ("wmctrl -i -r $window -b remove,maximized_vert");
+		RunCommand ("wmctrl -i -r $window -b remove,maximized_horz");	
+	} elsif (lc($type) eq "max") {
+		RunCommand ("wmctrl -i -r $window -b remove,fullscreen");
+		RunCommand ("wmctrl -i -r $window -b add,maximized_vert");
+		RunCommand ("wmctrl -i -r $window -b add,maximized_horz");
+	} elsif (lc($type) eq "norm") {
+		my $coords = int($x).",".int($y).",".int($width).",".int($height);
+		debug_print ("Positioning $window\n");
+		RunCommand ("wmctrl -i -r $window -b remove,fullscreen");
+		RunCommand ("wmctrl -i -r $window -b remove,maximized_vert");
+		RunCommand ("wmctrl -i -r $window -b remove,maximized_horz");
+		RunCommand ("wmctrl -i -r $window -e 0,$coords");
+	}
 	RunCommand ("wmctrl -i -r $window -T \"$name\"");
-	RunCommand ("wmctrl -i -r $window -b remove,fullscreen");
-	RunCommand ("wmctrl -i -r $window -b remove,maximized_vert");
-	RunCommand ("wmctrl -i -r $window -b remove,maximized_horz");
 	RunCommand ("wmctrl -i -r $window -b remove,shaded");
 	RunCommand ("wmctrl -i -r $window -b remove,hidden");
 	RunCommand ("wmctrl -i -a $window");
-	RunCommand ("wmctrl -i -r $window -e 0,$coords");
 }
 
 sub RunCommand {
@@ -418,8 +447,8 @@ sub SwapWindows {
 	if (!$foundB) { print "Couldn't find window called 'Kodi $swapB'.\n";}
 	if (!$foundA || !$foundB) { exit; }
 	
-	PositionWindow ("Kodi ".$swapA, $windowB, $xA, $yA-$titlebar_height, $wA, $hA);
-	PositionWindow ("Kodi ".$swapB, $windowA, $xB, $yB-$titlebar_height, $wB, $hB);
+	PositionWindow ("Kodi ".$swapA, $windowB, "norm", $xA, $yA-$titlebar_height, $wA, $hA);
+	PositionWindow ("Kodi ".$swapB, $windowA, "norm", $xB, $yB-$titlebar_height, $wB, $hB);
 	
 	return %kodis;
 	

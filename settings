@@ -92,3 +92,42 @@ set 6db 4x3  0,1,2,2 2,1,2,2 0,0,1,1 1,0,1,1 2,0,1,1 3,0,1,1
 set 10d 4x4  0,1,2,2 2,1,2,2 0,0,1,1 1,0,1,1 2,0,1,1 3,0,1,1 0,3,1,1 1,3,1,1 2,3,1,1 3,3,1,1 
 # Thirteen kodis: one large one in the middle, and twelve around the sides 
 set 13s 4x4  1,1,2,2 0,0,1,1 1,0,1,1 2,0,1,1 3,0,1,1 0,1,1,1 3,1,1,1 0,2,1,1 3,2,1,1 0,3,1,1 1,3,1,1 2,3,1,1 3,3,1,1 
+
+# Picture-in-picture, in bottom right corner
+set pip 3x3 Max 2,1.9,1,1
+# Picture-in-picture, in bottom left corner
+set pip-bl 3x3 Max 0,1.9,1,1
+# Picture-in-picture, in top left corner
+set pip-tl 3x3 Max 0,0.1,1,1
+# Picture-in-picture, in top right corner
+set pip-tr 3x3 Max 2,0.1,1,1
+# Picture-in-picture, in bottom right corner
+set pip-br 3x3 Max 2,1.9,1,1
+
+# Picture-in-picture, small, in bottom right corner
+set pips 4x4 Max 3,2.75,1,1
+# Picture-in-picture, small, in bottom left corner
+set pips-bl 4x4 Max 0,2.75,1,1
+# Picture-in-picture, small, in top left corner
+set pips-tl 4x4 Max 0,0.25,1,1
+# Picture-in-picture, small, in top right corner
+set pips-tr 4x4 Max 3,0.25,1,1
+# Picture-in-picture, small, in bottom right corner
+set pips-br 4x4 Max 3,2.75,1,1
+
+# Picture-in-picture, small, two in bottom right
+set pips-2br 4x4 Max 0,1.5,1,1 3,2.75,1,1
+# Picture-in-picture, small, two in bottom left
+set pips-2bl 4x4 Max 0,1.5,1,1 0,2.75,1,1
+
+# Picture-in-picture, small, four in the corners
+set pips-4c 4x4 Max 0,0.25,1,1 3,0.25,1,1 3,2.75,1,1 0,2.75,1,1
+# Picture-in-picture, small, three along the right edge
+set pips-3r 4x4 Max 3,0.25,1,1 3,1.5,1,1 3,2.75,1,1
+# Picture-in-picture, small, three along the left edge
+set pips-3l 4x4 Max 0,0.25,1,1 0,1.5,1,1 0,2.75,1,1
+# Picture-in-picture, small, three on the bottom edge
+set pips-3b 4x4 Max 0.5,2.9,1,1 1.5,2.9,1,1 2.5,2.9,1,1
+
+# One kodi, full screen
+set 1f   1x1 Full
