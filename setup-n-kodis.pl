@@ -97,6 +97,22 @@ if ($num_args >= 1) {
 			print "No such window found.\n";
 		}
 		exit;
+	} elsif (($arg eq "name") && ($num_args > 2)) {
+		%kodis = FindKodis();
+		$number = $ARGV[1];
+		if (exists($kodis{$number})) {
+			my $window = $kodis{$number};
+			my $name = "Kodi $number - ";
+			for (my $i = 2; $i< $num_args; $i++) { 
+				if ($i != 2) { $name = $name . " "; }
+				$name = $name . $ARGV[$i];
+			}
+			print "Renamed kodi $number to '$name'.\n";
+			RunCommand ("wmctrl -i -r $window -T \"$name\"");
+		} else {
+			print "Can't find Kodi $number.\n";
+		}
+		exit;
 	} else {
 		print "Couldn't interpret arguments.\n";
 		$list_arrs = 1;
@@ -190,179 +206,182 @@ print "Done.\n";
 
 sub PositionKodis {
 
-	print "Positioning...\n";
-	
 	my %kodis = FindKodis();
 	my $current_kodis = keys %kodis;
-
-	my $rows;
-	my $cols;
-
-	if ($special) {
-		if ($spec[0] =~ /(\d+)x(\d+)/) {
-			$cols = $1;
-			$rows = $2;
-		} else {
-			print "Couldn't interpret special dimension: ".$spec[0]."\n";
-			exit;
-		}
-	} else {
-		my $sq = ceil(sqrt($current_kodis));
-		$cols = $sq;
-		$rows = ceil($current_kodis/$cols);
-	}
 	
-	my $xmargin = $space_width * $margin_ratio;
-	my $ymargin = $space_height * $margin_ratio;
-	my $xstep = ($space_width - $xmargin) / $cols;
-	my $ystep = ($space_height - $ymargin) / $rows;
-	my $xorigin = $xmargin + $offset_width;
-	my $yorigin = $ymargin + $offset_height;
-	
-	debug_print ( "xmargin: $xmargin\n");
-	debug_print ( "ymargin: $ymargin\n");
-	debug_print ( "xstep: $xstep\n");
-	debug_print ( "ystep: $ystep\n");
-	debug_print ( "xorigin: $xorigin\n");
-	debug_print ( "yorigin: $yorigin\n");
-	
-	debug_print ( "cell width: ".($xstep-$xmargin)."\n");
-	debug_print ( "cell height: ".($ystep-$ymargin)."\n");
-
-	my $single_width = $xstep - $xmargin;
-	my $single_height = $ystep - $ymargin - $titlebar_height;
-	
-	# This next thing is to center up the cells. If we just centered each window in evenly divided cells, we end up with more space between cells than
-	#  on the edges, on whichever axis isn't completely full. So here we figure out which is full, figure out what the other will be,
-	#  and adjust the margins so that they take into account the extra space.
-
-	my $adj_height = $single_height / $window_ratio;
-	if ($single_width > $adj_height) {
-		# if scaled width is greater, use height
-		debug_print ("Limited by height.\n");
-		$xmargin = ($space_width - ($adj_height * $cols)) / ($cols + 1);
-		$xstep = $adj_height + $xmargin;
-		$xorigin = $xmargin + $offset_width;
-	} else {
-		# if scaled height is greater, use width
-		debug_print ("Limited by width.\n");
-		my $eff_height = ($single_width * $window_ratio) + $titlebar_height;
-		debug_print ("Effective height: ".$eff_height."\n");
-		$ymargin = ($space_height - ($eff_height * $rows)) / ($rows + 1);
-		$ystep = $eff_height + $ymargin;
-		$yorigin = $ymargin + $offset_height;
-		debug_print ("ymargin: $ymargin\n");
-		debug_print ("ystep: $ystep\n");
-		debug_print ("yorigin: $yorigin\n");
-	}
-
-	my $i=0;
-	my $col=0;
-	my $row=0;
-	my $pixels=0;
-	
-	my @maxed;
-
-	foreach my $number (sort keys %kodis) {
-
-		$window = $kodis{$number};
-				
-		my $type,$cell_row,$cell_col,$cell_width,$cell_height;
+	if ($current_kodis > 0) {
+		
+		print "Positioning...\n";
+		
+		my $rows;
+		my $cols;
 
 		if ($special) {
-			my $s = $i+1;
-			debug_print ("s:".$s."\n");
-			debug_print ("spec: ".$spec[$s]."\n");
-			if ($spec[$s] =~ /^([0-9.]+),([0-9.]+),([0-9.]+),([0-9.]+)$/) {
-				$type = "Norm";
-				$cell_col = $1;
-				$cell_row = $2;
-				$cell_width = $3;
-				$cell_height = $4;
-			} elsif ((lc($spec[$s]) eq "full") || (lc($spec[$s]) eq "max")) {
-				$type = $spec[$s];
-				if (lc($spec[$s]) eq "max") {
-					push (@maxed,$window);
-				}
+			if ($spec[0] =~ /(\d+)x(\d+)/) {
+				$cols = $1;
+				$rows = $2;
 			} else {
-				print "Couldn't interpret window dimensions: ".$spec[$s]."\n";
+				print "Couldn't interpret special dimension: ".$spec[0]."\n";
 				exit;
 			}
 		} else {
-			$type = "Norm";
-			$cell_col = $col;
-			$cell_row = $row;
-			$cell_width = 1;
-			$cell_height = 1;
+			my $sq = ceil(sqrt($current_kodis));
+			$cols = $sq;
+			$rows = ceil($current_kodis/$cols);
+		}
+		
+		my $xmargin = $space_width * $margin_ratio;
+		my $ymargin = $space_height * $margin_ratio;
+		my $xstep = ($space_width - $xmargin) / $cols;
+		my $ystep = ($space_height - $ymargin) / $rows;
+		my $xorigin = $xmargin + $offset_width;
+		my $yorigin = $ymargin + $offset_height;
+		
+		debug_print ( "xmargin: $xmargin\n");
+		debug_print ( "ymargin: $ymargin\n");
+		debug_print ( "xstep: $xstep\n");
+		debug_print ( "ystep: $ystep\n");
+		debug_print ( "xorigin: $xorigin\n");
+		debug_print ( "yorigin: $yorigin\n");
+		
+		debug_print ( "cell width: ".($xstep-$xmargin)."\n");
+		debug_print ( "cell height: ".($ystep-$ymargin)."\n");
+
+		my $single_width = $xstep - $xmargin;
+		my $single_height = $ystep - $ymargin - $titlebar_height;
+		
+		# This next thing is to center up the cells. If we just centered each window in evenly divided cells, we end up with more space between cells than
+		#  on the edges, on whichever axis isn't completely full. So here we figure out which is full, figure out what the other will be,
+		#  and adjust the margins so that they take into account the extra space.
+
+		my $adj_height = $single_height / $window_ratio;
+		if ($single_width > $adj_height) {
+			# if scaled width is greater, use height
+			debug_print ("Limited by height.\n");
+			$xmargin = ($space_width - ($adj_height * $cols)) / ($cols + 1);
+			$xstep = $adj_height + $xmargin;
+			$xorigin = $xmargin + $offset_width;
+		} else {
+			# if scaled height is greater, use width
+			debug_print ("Limited by width.\n");
+			my $eff_height = ($single_width * $window_ratio) + $titlebar_height;
+			debug_print ("Effective height: ".$eff_height."\n");
+			$ymargin = ($space_height - ($eff_height * $rows)) / ($rows + 1);
+			$ystep = $eff_height + $ymargin;
+			$yorigin = $ymargin + $offset_height;
+			debug_print ("ymargin: $ymargin\n");
+			debug_print ("ystep: $ystep\n");
+			debug_print ("yorigin: $yorigin\n");
 		}
 
-		my $avail_width = ($xstep * $cell_width) - $xmargin;
-		my $avail_height = ($ystep * $cell_height) - $ymargin - $titlebar_height;
+		my $i=0;
+		my $col=0;
+		my $row=0;
+		my $pixels=0;
 		
-		my $x = $xorigin + $xstep * $cell_col;
-		my $y = $yorigin + $ystep * $cell_row;
-		my $w = $avail_width;
-		my $h = $avail_height;
-		
-		if ($type eq "Norm") {
-			
-			debug_print ( "cell width: $w\n");
-			debug_print ( "cell height: $h\n");
-			debug_print ( "cell x: $x\n");
-			debug_print ( "cell y: $y\n");
-			
-			if (($cell_width > 1) || ($cell_height > 1)) {
-				# we only have to do this for the large windows created in special cases
-				# for a normal grid of 1-cell windows, they are already taken care of by the global centering above
-				my $adj_height = $h / $window_ratio;
-				if ($w > $adj_height) {
-					# if scaled width is greater, use height
-					$w = $adj_height;
-					$x = $x + ($avail_width-$w)/2;
-					debug_print ("Limited by height.\n");
+		my @maxed;
+
+		foreach my $number (sort keys %kodis) {
+
+			$window = $kodis{$number};
+					
+			my $type,$cell_row,$cell_col,$cell_width,$cell_height;
+
+			if ($special) {
+				my $s = $i+1;
+				debug_print ("s:".$s."\n");
+				debug_print ("spec: ".$spec[$s]."\n");
+				if ($spec[$s] =~ /^([0-9.]+),([0-9.]+),([0-9.]+),([0-9.]+)$/) {
+					$type = "Norm";
+					$cell_col = $1;
+					$cell_row = $2;
+					$cell_width = $3;
+					$cell_height = $4;
+				} elsif ((lc($spec[$s]) eq "full") || (lc($spec[$s]) eq "max")) {
+					$type = $spec[$s];
+					if (lc($spec[$s]) eq "max") {
+						push (@maxed,$window);
+					}
 				} else {
-					# if scaled height is greater, use width
-					$h = ($w * $window_ratio);
-					$y = $y + ($avail_height-$h)/2;
-					debug_print ("Limited by width.\n");
+					print "Couldn't interpret window dimensions: ".$spec[$s]."\n";
+					exit;
 				}
+			} else {
+				$type = "Norm";
+				$cell_col = $col;
+				$cell_row = $row;
+				$cell_width = 1;
+				$cell_height = 1;
 			}
+
+			my $avail_width = ($xstep * $cell_width) - $xmargin;
+			my $avail_height = ($ystep * $cell_height) - $ymargin - $titlebar_height;
 			
-			debug_print ("selected width: $w\n");
-			debug_print ("selected height: $h\n");
-			debug_print ("selected x: $x\n");
-			debug_print ("selected y: $y\n");
+			my $x = $xorigin + $xstep * $cell_col;
+			my $y = $yorigin + $ystep * $cell_row;
+			my $w = $avail_width;
+			my $h = $avail_height;
+			
+			if ($type eq "Norm") {
+				
+				debug_print ( "cell width: $w\n");
+				debug_print ( "cell height: $h\n");
+				debug_print ( "cell x: $x\n");
+				debug_print ( "cell y: $y\n");
+				
+				if (($cell_width > 1) || ($cell_height > 1)) {
+					# we only have to do this for the large windows created in special cases
+					# for a normal grid of 1-cell windows, they are already taken care of by the global centering above
+					my $adj_height = $h / $window_ratio;
+					if ($w > $adj_height) {
+						# if scaled width is greater, use height
+						$w = $adj_height;
+						$x = $x + ($avail_width-$w)/2;
+						debug_print ("Limited by height.\n");
+					} else {
+						# if scaled height is greater, use width
+						$h = ($w * $window_ratio);
+						$y = $y + ($avail_height-$h)/2;
+						debug_print ("Limited by width.\n");
+					}
+				}
+				
+				debug_print ("selected width: $w\n");
+				debug_print ("selected height: $h\n");
+				debug_print ("selected x: $x\n");
+				debug_print ("selected y: $y\n");
 
-			if (!$special && ($row == $rows-1)) {
-				if ($current_kodis % $cols != 0) {
-					$x = $x + $xstep*($cols-($current_kodis%$cols))/2;
+				if (!$special && ($row == $rows-1)) {
+					if ($current_kodis % $cols != 0) {
+						$x = $x + $xstep*($cols-($current_kodis%$cols))/2;
+					}
 				}
 			}
-		}
 
-		PositionWindow ("Kodi ".($i+1),$window,$type,$x,$y,$w,$h);
-		$pixels = $pixels + ($w * $h);
-				
-		$i = $i + 1;
-		$col = $col + 1;
-		if ($col == $cols) {
-			$row = $row + 1;
-			$col = 0;
+			PositionWindow ("Kodi ".($i+1),$window,$type,$x,$y,$w,$h);
+			$pixels = $pixels + ($w * $h);
+					
+			$i = $i + 1;
+			$col = $col + 1;
+			if ($col == $cols) {
+				$row = $row + 1;
+				$col = 0;
+			}
 		}
-	}
-	
-	# set focus to where it was before we started, unless said window is maximized
-	# in which case, we want it to stay on the bottom, where it already is
-	my $ismax = 0;
-	foreach my $m (@maxed) {
-		if ($startingwindow eq hex($m)) { $ismax = 1; }
-	}
-	if (!$ismax) {
-		RunCommand ("wmctrl -i -a ".$startingwindow);
-	}
 		
-	$efficiency = $pixels / ($space_width * $space_height);
-	
+		# set focus to where it was before we started, unless said window is maximized
+		# in which case, we want it to stay on the bottom, where it already is
+		my $ismax = 0;
+		foreach my $m (@maxed) {
+			if ($startingwindow eq hex($m)) { $ismax = 1; }
+		}
+		if (!$ismax) {
+			RunCommand ("wmctrl -i -a ".$startingwindow);
+		}
+			
+		$efficiency = $pixels / ($space_width * $space_height);
+
+	}
 }
 
 sub PositionWindow {
@@ -383,10 +402,19 @@ sub PositionWindow {
 		RunCommand ("wmctrl -i -r $window -b remove,maximized_horz");
 		RunCommand ("wmctrl -i -r $window -e 0,$coords");
 	}
-	RunCommand ("wmctrl -i -r $window -T \"$name\"");
 	RunCommand ("wmctrl -i -r $window -b remove,shaded");
 	RunCommand ("wmctrl -i -r $window -b remove,hidden");
 	RunCommand ("wmctrl -i -a $window");
+	$name = MakeNewName (GetWindowName ($window),$name);
+	RunCommand ("wmctrl -i -r $window -T \"$name\"");
+}
+
+sub MakeNewName {
+	my ($oldname,$newname) = @_;
+	if ($oldname =~ /Kodi \d+\s-\s(.+)/) {
+		return $newname . " - " . $1;
+	}
+	return $newname;
 }
 
 sub RunCommand {
@@ -403,7 +431,7 @@ sub FindKodis {
 	my @lines   = split /\n/ => $output;
 	for my $line (@lines) {
 		#print $line . "\n";
-		if ($line =~ /^([x0-9a-f]+).*\sKodi(\s(\d+))?$/) { 
+		if ($line =~ /^([x0-9a-f]+).*\sKodi(\s(\d+))?/) { 
 			$key = int($3);
 			# the possibility exists that Kodis are open that we didn't start, so they have no number
 			# they are probably just called 'Kodi', so the $key at this point would be zero
@@ -417,6 +445,18 @@ sub FindKodis {
 		}
 	}
 	return %kodis;
+}
+
+sub GetWindowName {
+	my ($window) = @_;
+	$output = RunCommand ("wmctrl -l");
+	my @lines   = split /\n/ => $output;
+	for my $line (@lines) {
+		if ($line =~ /^$window\s+\d+\s+\S+\s+(.*)/) {
+			return $1;
+		}
+	}
+	return "";
 }
 
 sub debug_print {
@@ -434,7 +474,7 @@ sub SwapWindows {
 	my $foundA = 0;
 	my $foundB = 0;
 	for my $line (@lines) {
-		if ($line =~ /^([x0-9a-f]+)\s+\d+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+.*Kodi\s(\d+)$/) { 
+		if ($line =~ /^([x0-9a-f]+)\s+\d+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+.*Kodi\s(\d+)/) { 
 			if ($6 == $swapA) {
 				($foundA, $windowA, $xA, $yA, $wA, $hA) = (1, $1, $2, $3, $4, $5);
 			}
