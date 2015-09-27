@@ -2,6 +2,10 @@
 use POSIX;
 use Data::Dumper qw(Dumper);
 
+# todo: add 'kill' by number and 'kill all'
+# todo: finger each window after swap (to fix pip problem)
+# todo: arrange windows according to new arrangement, not present arrangement (as they are being assembled)
+
 my $debug = 0;
 
 #default
@@ -28,6 +32,11 @@ ReadSettings ("settings");
 my $margin_ratio = $settings{"margin_ratio"};
 my $window_ratio = $settings{"window_ratio"};
 my $titlebar_height = $settings{"titlebar_height"};
+
+my $reserve_top = $settings{"reserve_top"};
+my $reserve_bottom = $settings{"reserve_bottom"};
+my $reserve_left = $settings{"reserve_left"};
+my $reserve_right = $settings{"reserve_right"};
 
 debug_print ("Settings values:\n");
 while (($key, $value) = each %settings) {
@@ -140,10 +149,12 @@ print ".\n";
 my $output = `wmctrl -d`;
 
 if ($output =~ /(\d+)x(\d+).*\s(\d+),(\d+)*\s(\d+)x(\d+).*/) {
-	$offset_width = $3;
-	$offset_height = $4;
 	$space_width = $5;
 	$space_height = $6;
+	$offset_width = $3 + ($reserve_left * $space_width);
+	$offset_height = $4 + ($reserve_top * $space_height);
+	$space_width = $space_width * (1 - $reserve_left - $reserve_right);
+	$space_height = $space_height * (1 - $reserve_top - $reserve_bottom);
 	debug_print ("space width: $space_width\n");
 	debug_print ("space height: $space_height\n");
 } else {
