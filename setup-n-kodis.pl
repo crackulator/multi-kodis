@@ -3,7 +3,6 @@ use POSIX;
 use Data::Dumper qw(Dumper);
 
 # todo: add 'kill' by number and 'kill all'
-# todo: arrange windows according to new arrangement, not present arrangement (as they are being assembled)
 
 my $debug = 0;
 
@@ -250,9 +249,9 @@ sub PositionKodis {
 				exit;
 			}
 		} else {
-			my $sq = ceil(sqrt($current_kodis));
+			my $sq = ceil(sqrt($num_kodis));
 			$cols = $sq;
-			$rows = ceil($current_kodis/$cols);
+			$rows = ceil($num_kodis/$cols);
 		}
 		
 		my $xmargin = $space_width * $margin_ratio;
@@ -377,8 +376,8 @@ sub PositionKodis {
 				debug_print ("selected y: $y\n");
 
 				if (!$special && ($row == $rows-1)) {
-					if ($current_kodis % $cols != 0) {
-						$x = $x + $xstep*($cols-($current_kodis%$cols))/2;
+					if ($num_kodis % $cols != 0) {
+						$x = $x + $xstep*($cols-($num_kodis%$cols))/2;
 					}
 				}
 			}
