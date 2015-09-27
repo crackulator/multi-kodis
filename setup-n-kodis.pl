@@ -3,7 +3,6 @@ use POSIX;
 use Data::Dumper qw(Dumper);
 
 # todo: add 'kill' by number and 'kill all'
-# todo: finger each window after swap (to fix pip problem)
 # todo: arrange windows according to new arrangement, not present arrangement (as they are being assembled)
 
 my $debug = 0;
@@ -56,6 +55,18 @@ if (($ENV{'DISPLAY'} eq "") || ($ENV{'XAUTHORITY'} eq "")) {
 	exit;
 }
 
+my $output = `xdotool getwindowfocus`;
+my $startingwindow;
+
+if ($output =~ /^(\d+)$/) {
+	$startingwindow = $1;
+} else {
+	print "Couldn't interpret output from 'xdotool getwindowfocus'.\n";
+	print "Most likely, it is not installed, so you might need to do something like:\n";
+	print "  sudo apt-get install xdotool\n";
+	exit ();
+}
+
 my $list_arrs = 0;
 
 $num_args = $#ARGV + 1;
@@ -88,6 +99,21 @@ if ($num_args >= 1) {
 		# swap the positions and titles of two windows
 		if (($num_args == 3) && ($ARGV[1] =~ /^\d+$/) && ($ARGV[2] =~ /^\d+$/)) {
 			SwapWindows ($ARGV[1],$ARGV[2]);
+			# Go through and touch each window in order; this is a particular bandaid to address a problem with pip
+			#   (or other overlapping configurations) where the swapping causes the z-axis to get mixed up and the
+			#   later-numbered windows being under the earlier-number ones (so underneath the full screen one)
+			# Note that unlike a regular setup, it doesn't restore the previously-selected window (which is done in
+			#   case the user is using a terminal on the window system). It can't, because it can't do the same job
+			#   of avoiding restoring a maximized window, because it doesn't know which ones are maximized. It doesn't
+			#   have any way to know (that I have been able to find) because it doesn't know the setup.
+			# (Which I don't want it to have to know anyway, because then it won't be able to swap windows if users
+			#   have self-positioned them, which is a nice feature to have)
+			# So the result is... it just leaves the highest-numbered window selected.
+			%kodis = FindKodis ();
+			foreach my $number (sort keys %kodis) {
+				$window = $kodis{$number};
+				RunCommand ("wmctrl -i -a ".$window);
+			}
 			exit;
 		} else {
 			print "Need 2 arguments, the numbers of the kodis to swap (like 'swap 1 2').\n";
@@ -161,18 +187,6 @@ if ($output =~ /(\d+)x(\d+).*\s(\d+),(\d+)*\s(\d+)x(\d+).*/) {
 	print "Couldn't interpret output from 'wmctrl -d'.\n";
 	print "Most likely, it is not installed, so you might need to do something like:\n";
 	print "  sudo apt-get install wmctrl\n";
-	exit ();
-}
-
-my $output = `xdotool getwindowfocus`;
-my $startingwindow;
-
-if ($output =~ /^(\d+)$/) {
-	$startingwindow = $1;
-} else {
-	print "Couldn't interpret output from 'xdotool getwindowfocus'.\n";
-	print "Most likely, it is not installed, so you might need to do something like:\n";
-	print "  sudo apt-get install xdotool\n";
 	exit ();
 }
 
