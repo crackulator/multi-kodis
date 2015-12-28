@@ -1,2 +1,2 @@
-perl remote.pl
+perl remote.pl $1 $2
 

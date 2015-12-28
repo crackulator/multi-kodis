@@ -1,0 +1,47 @@
+
+The following keys can be included in keyscripts
+
+Source: http://www.linux.org/threads/xdotool-keyboard.6414/
+
+	A-Z
+	a-z
+	0-9
+    F1-F12
+    space
+    exclam
+    quotedbl
+    numbersign
+    dollar
+    percent
+    ampersand
+    quoteright
+    parenleft
+    parenright
+    bracketleft
+    asterisk
+    backslash
+    plus
+    bracketright
+    comma
+    asciicircum
+    minus
+    underscore
+    period
+    quoteleft
+    slash
+    colon
+    semicolon
+    less
+    equal
+    greater
+    question
+    at
+    braceleft
+    bar
+    braceright
+    asciitilde
+    ctrl (Control key)
+    alt (Alternate key)
+    BackSpace
+    Return (Return or Enter key)
+	

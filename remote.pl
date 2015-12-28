@@ -1,7 +1,13 @@
 
 use Term::ReadKey;
+use Time::HiRes "usleep";
 
 $debug = 0;
+
+my $ok = 1;
+if (!(`xdotool -v` =~ /xdotool version/)) { print "xdotool does not appear to be installed.\n"; $ok=0; }
+#todo: detect whether wmctrl is installed
+if (!$ok) { exit; }
 
 my @kodis = FindKodis ();
 $kodisfound = scalar(@kodis);
@@ -12,6 +18,38 @@ print ".\n";
 if ($kodisfound == 0) {
 	print "Nothing to do here.\n";
 	exit
+}
+
+my $num_args = $#ARGV + 1;
+if ($num_args == 1) {
+	open(my $fh, '<:encoding(UTF-8)', "keyscripts/".$ARGV[0])
+		or die "Could not open keyscript file '$filename' $!\n";
+	print "Executing script '".$ARGV[0].".keyscript'\n";
+	while (my $row = <$fh>) {
+		chomp $row;
+		if ($row =~ /\s*(\d+|wait)\s+(.*)/) {
+			my $which = $1;
+			my $key = $2;
+			if ($which eq "wait") {
+				$secs = $key * 1000000;
+				print "Waiting ".$key." second";
+				if ($key ne "1") { print "s"; }
+				print "\n";
+				usleep ($secs);
+			} else {
+				for my $kodi (@kodis) {
+					my $window = @$kodi[0];
+					my $number = @$kodi[1];
+					if ($number == $which) {
+						print "Sending '$key' to Kodi $number.\n";
+						SendKey ($window,$key);
+						usleep (100000);
+					}
+				}
+			}
+		}
+	}
+	exit;
 }
 
 print "Implementation: cursors, enter, backspace, home.\n";
@@ -29,7 +67,7 @@ for my $kodi (@kodis) {
 
 PrintMask ();
 
-$done = 0;
+$done = 0; 
 
 ReadMode 4; # Turn off controls keys
 while (!$done) {
@@ -43,7 +81,7 @@ while (!$done) {
 		elsif ($hex eq "1b5b44") { $send = "Left"; }
 		elsif ($hex eq "1b5b43") { $send = "Right"; }
 		elsif ($hex eq "1b4f48") { $send = "Home"; }
-		elsif ($hex eq "1b5b31") { $send = "Home"; }
+		#elsif ($hex eq "1b5b317e") { $send = "Home"; }
 		elsif ($hex eq "7f") { $send = "BackSpace"; }
 		elsif ($hex eq "a") { $send = "Return"; }
 		elsif ($hex eq "2c") { $send = "minus"; }
@@ -70,19 +108,27 @@ while (!$done) {
 				else { $mask{$n} = "on"; }
 			}
 			PrintMask ();
+		} else {
+			print "No action for '$hex'.\n";
 		}
 		if ($send ne "") {
 			for my $kodi (@kodis) {
 				my $window = @$kodi[0];
 				my $number = @$kodi[1];
 				if ($mask{$number} eq "on") {
-					RunCommand ("xdotool key --window $window $send");
+					SendKey ($window,$send);
 				}
 			}
 		}
 	}
 }
+
 ReadMode 0; # Reset tty mode before exiting
+
+sub SendKey {
+	($window,$send) = @_;
+	RunCommand ("xdotool key --window $window $send");
+}	
 
 sub GetKeySequence {
 	my $key = GetKey();
@@ -91,6 +137,9 @@ sub GetKeySequence {
 		my $retval = $hex;
 		$retval .= sprintf ("%x",ord(GetKey()));
 		$retval .= sprintf ("%x",ord(GetKey()));
+		#if ($retval == "1b5b31") {
+		#	$retval .= sprintf ("%x",ord(GetKey()));
+		#}
 		return ("ctrl",$retval,"");
 	} else {
 		return ("ascii",$hex,$key);
@@ -98,8 +147,8 @@ sub GetKeySequence {
 }
 
 sub GetKey {
-    while (not defined ($key = ReadKey(-1))) { };
-    debug_print ("Get key (".sprintf ("%x",ord($key)).")\n");
+    while (not defined ($key = ReadKey(-1))) {   usleep (5000); };
+    # debug_print ("Get key (".sprintf ("%x",ord($key)).")\n");
 	return $key;
 }
 	
@@ -109,7 +158,7 @@ sub FindKodis {
 	my @lines   = split /\n/ => $output;
 	for my $line (@lines) {
 		#print $line . "\n";
-		if ($line =~ /^([x0-9a-f]+).*\sKodi(\s(\d+))?$/) { push(@kodis,[$1,int($3)]); }
+		if ($line =~ /^([x0-9a-f]+).*\sKodi(\s(\d+))?/) { push(@kodis,[$1,int($3)]); }
 	}
 	return @kodis;
 }
