@@ -12,16 +12,6 @@ margin_ratio = 0.0125
 # default value: 0.563 (standard 16:9 movie aspect ratio)
 window_ratio = 0.563
 
-# Reserve area, like an extra margin, on selected edges of the screen
-# Use this if you want to save some area for something else, like status indicators or such
-# (I use it for screenlets indicating CPU and network load, along the left hand side)
-# Expressed as a fraction of total screen width or height (1 would be the whole screen)
-# default value: zero for all
-reserve_top = 0
-reserve_bottom = 0
-reserve_left = 0
-reserve_right = 0
-
 # Height of the title bars, which needs to be included in some of the calculations
 # This might change depending on your desktop setup 
 # empirical; if this is off, the 'swap' function will move your windows in the y-direction
@@ -71,10 +61,14 @@ set 2s  3x3  2,0,1,1 2,1,1,1
 # Two quarter-size kodis on right edge
 set 2q  2x2  1,0,1,1 1,1,1,1
 # Three tiny kodis along right edge
-set 3t  4x4  3,0,1,1 3,1,1,1 3,2,1,1    
+set 3t  4x4  3,0,1,1 3,1,1,1 3,2,1,1 
+# Three kodis: 'dual' (two large) on top, one below
+set 3d  4x3  0,0,2,2 2,0,2,2 1.5,2,1,1  
 # Four tiny kodis, on right edge
 set 4t  4x4  3,0,1,1 3,1,1,1 3,2,1,1 3,3,1,1    
 # Three small kodis on the right
+set 3sr 3x3  2,0,1,1 2,1,1,1 2,2,1,1 
+# Three kodis: one large one on top, and two small ones below
 set 3s  3x3  0,0,3,2 0.5,2,1,1 1.5,2,1,1 
 # Four kodis: one large on the top, and three small ones
 set 4s  3x3  0,0,3,2 0,2,1,1 1,2,1,1 2,2,1,1    
