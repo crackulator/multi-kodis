@@ -2,6 +2,8 @@
 use POSIX;
 use Data::Dumper qw(Dumper);
 
+# todo: add 'kill' by number and 'kill all'
+
 my $debug = 0;
 
 #default
@@ -29,6 +31,11 @@ my $margin_ratio = $settings{"margin_ratio"};
 my $window_ratio = $settings{"window_ratio"};
 my $titlebar_height = $settings{"titlebar_height"};
 
+my $reserve_top = $settings{"reserve_top"};
+my $reserve_bottom = $settings{"reserve_bottom"};
+my $reserve_left = $settings{"reserve_left"};
+my $reserve_right = $settings{"reserve_right"};
+
 debug_print ("Settings values:\n");
 while (($key, $value) = each %settings) {
 	debug_print ("$key: $value\n");
@@ -45,6 +52,18 @@ if (($ENV{'DISPLAY'} eq "") || ($ENV{'XAUTHORITY'} eq "")) {
 	print " if [ -z \"\$XAUTHORITY\" ]; then XAUTHORITY=/home/[user]/.Xauthority; export XAUTHORITY; fi\n";
 	print "(for nominal single-display cases)\n";
 	exit;
+}
+
+my $output = `xdotool getwindowfocus`;
+my $startingwindow;
+
+if ($output =~ /^(\d+)$/) {
+	$startingwindow = $1;
+} else {
+	print "Couldn't interpret output from 'xdotool getwindowfocus'.\n";
+	print "Most likely, it is not installed, so you might need to do something like:\n";
+	print "  sudo apt-get install xdotool\n";
+	exit ();
 }
 
 my $list_arrs = 0;
@@ -79,6 +98,21 @@ if ($num_args >= 1) {
 		# swap the positions and titles of two windows
 		if (($num_args == 3) && ($ARGV[1] =~ /^\d+$/) && ($ARGV[2] =~ /^\d+$/)) {
 			SwapWindows ($ARGV[1],$ARGV[2]);
+			# Go through and touch each window in order; this is a particular bandaid to address a problem with pip
+			#   (or other overlapping configurations) where the swapping causes the z-axis to get mixed up and the
+			#   later-numbered windows being under the earlier-number ones (so underneath the full screen one)
+			# Note that unlike a regular setup, it doesn't restore the previously-selected window (which is done in
+			#   case the user is using a terminal on the window system). It can't, because it can't do the same job
+			#   of avoiding restoring a maximized window, because it doesn't know which ones are maximized. It doesn't
+			#   have any way to know (that I have been able to find) because it doesn't know the setup.
+			# (Which I don't want it to have to know anyway, because then it won't be able to swap windows if users
+			#   have self-positioned them, which is a nice feature to have)
+			# So the result is... it just leaves the highest-numbered window selected.
+			%kodis = FindKodis ();
+			foreach my $number (sort keys %kodis) {
+				$window = $kodis{$number};
+				RunCommand ("wmctrl -i -a ".$window);
+			}
 			exit;
 		} else {
 			print "Need 2 arguments, the numbers of the kodis to swap (like 'swap 1 2').\n";
@@ -140,28 +174,18 @@ print ".\n";
 my $output = `wmctrl -d`;
 
 if ($output =~ /(\d+)x(\d+).*\s(\d+),(\d+)*\s(\d+)x(\d+).*/) {
-	$offset_width = $3;
-	$offset_height = $4;
 	$space_width = $5;
 	$space_height = $6;
+	$offset_width = $3 + ($reserve_left * $space_width);
+	$offset_height = $4 + ($reserve_top * $space_height);
+	$space_width = $space_width * (1 - $reserve_left - $reserve_right);
+	$space_height = $space_height * (1 - $reserve_top - $reserve_bottom);
 	debug_print ("space width: $space_width\n");
 	debug_print ("space height: $space_height\n");
 } else {
 	print "Couldn't interpret output from 'wmctrl -d'.\n";
 	print "Most likely, it is not installed, so you might need to do something like:\n";
 	print "  sudo apt-get install wmctrl\n";
-	exit ();
-}
-
-my $output = `xdotool getwindowfocus`;
-my $startingwindow;
-
-if ($output =~ /^(\d+)$/) {
-	$startingwindow = $1;
-} else {
-	print "Couldn't interpret output from 'xdotool getwindowfocus'.\n";
-	print "Most likely, it is not installed, so you might need to do something like:\n";
-	print "  sudo apt-get install xdotool\n";
 	exit ();
 }
 
@@ -225,9 +249,9 @@ sub PositionKodis {
 				exit;
 			}
 		} else {
-			my $sq = ceil(sqrt($current_kodis));
+			my $sq = ceil(sqrt($num_kodis));
 			$cols = $sq;
-			$rows = ceil($current_kodis/$cols);
+			$rows = ceil($num_kodis/$cols);
 		}
 		
 		my $xmargin = $space_width * $margin_ratio;
@@ -352,8 +376,8 @@ sub PositionKodis {
 				debug_print ("selected y: $y\n");
 
 				if (!$special && ($row == $rows-1)) {
-					if ($current_kodis % $cols != 0) {
-						$x = $x + $xstep*($cols-($current_kodis%$cols))/2;
+					if ($num_kodis % $cols != 0) {
+						$x = $x + $xstep*($cols-($num_kodis%$cols))/2;
 					}
 				}
 			}
