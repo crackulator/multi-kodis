@@ -1,8 +1,12 @@
 
 use POSIX;
 use Data::Dumper qw(Dumper);
+use POSIX qw(strftime);
 
-my $debug = 0;
+debug_start ();
+
+debug_print ("Command-line arguments:\n");
+debug_print (Dumper \@ARGV);
 
 my $num_kodis;
 my %kodis;
@@ -24,6 +28,9 @@ my %settings;
 ReadSettings ("settings");
 ReadSettings ("arrangements");
 
+debug_print ("Settings:\n");
+debug_print (Dumper \%settings);
+
 $version = ReadVersion ();
 print "multi-kodis version ".$version."\n";
 
@@ -36,12 +43,9 @@ my $reserve_bottom = $settings{"reserve_bottom"};
 my $reserve_left = $settings{"reserve_left"};
 my $reserve_right = $settings{"reserve_right"};
 
-my @arr = (1,2,3,4);
-debug_print (Dumper \@arr);
-
 debug_print ("Settings values:\n");
 while (($key, $value) = each %settings) {
-	debug_print ("$key: $value\n");
+	debug_print ("  $key: $value\n");
 }
 
 my $efficiency;
@@ -293,6 +297,7 @@ if ($kodisfound > $num_kodis) {
 }
 
 printf ("Space utilization: %.1f\%\n",$efficiency*100);
+debug_end ();
 print "Done.\n";
 
 
@@ -636,8 +641,22 @@ sub GetWindowName {
 	return "";
 }
 
+my $debugfile;
+sub debug_start {
+	my $debugfilename = "debug.log";
+	open($debugfile, '>', $debugfilename) or die "Could not open debug logging file '$debugfilename' $!";
+	print $debugfile "Debugging started.\n";
+    print $debugfile strftime "%H:%M:%S %a %b %e %Y\n", localtime;
+}
+
 sub debug_print {
-	if ($debug) { print @_; }
+	print $debugfile @_;
+}
+
+sub debug_end {
+	print $debugfile "Debugging ended normally.\n";
+    print $debugfile strftime "%H:%M:%S %a %b %e %Y\n", localtime;
+	close $debugfile;
 }
 
 sub FindUnnumberedKodi {
@@ -727,8 +746,6 @@ sub ReadSettings {
 			$settings{$1} = $2;
 		}
 	}
-	debug_print ("Settings:\n");
-	debug_print (Dumper \%settings);
 }
 
 sub ReadVersion {
