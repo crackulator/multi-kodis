@@ -24,6 +24,9 @@ my %settings;
 ReadSettings ("settings");
 ReadSettings ("arrangements");
 
+$version = ReadVersion ();
+print "multi-kodis version ".$version."\n";
+
 my $margin_ratio = $settings{"margin_ratio"};
 my $window_ratio = $settings{"window_ratio"};
 my $titlebar_height = $settings{"titlebar_height"};
@@ -726,6 +729,21 @@ sub ReadSettings {
 	}
 	debug_print ("Settings:\n");
 	debug_print (Dumper \%settings);
+}
+
+sub ReadVersion {
+	$filename = "version";
+	open(my $fh, '<:encoding(UTF-8)', $filename)
+		or die "Could not open version file '$filename' $!";
+ 
+	while (my $row = <$fh>) {
+		chomp $row;
+		if ($row =~ /^\s*Version:\s*(.*)/) {
+			return $1;
+		}
+	}
+	
+	die "Couldn't locate version string in version file.";
 }
 
 sub AddSpecial {
