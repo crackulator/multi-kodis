@@ -22,12 +22,18 @@ if ($kodisfound == 0) {
 
 my $num_args = $#ARGV + 1;
 if ($num_args == 1) {
-	open(my $fh, '<:encoding(UTF-8)', "keyscripts/".$ARGV[0])
-		or die "Could not open keyscript file '$filename' $!\n";
-	print "Executing script '".$ARGV[0].".keyscript'\n";
+	$scriptname = $ARGV[0];
+	open(my $fh, '<:encoding(UTF-8)', "keyscripts/".$scriptname)
+		or die "Could not open keyscript file '$scriptname': $!\n";
+	print "Executing script '".$scriptname.".keyscript'\n";
 	while (my $row = <$fh>) {
 		chomp $row;
-		if ($row =~ /\s*(\d+|wait)\s+(.*)/) {
+		if ($row =~ /^(.*)#/) { $row = $1; }
+		if ($row =~ /^>\s*(.*)/) {
+			print "Found shell command: '$1'.\n";
+			print `$1`;
+		}
+		elsif ($row =~ /^\s*(\d+|wait)\s+([A-Za-z0-9.]+)/) {
 			my $which = $1;
 			my $key = $2;
 			if ($which eq "wait") {
