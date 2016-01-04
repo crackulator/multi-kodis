@@ -51,26 +51,26 @@ All the work is done by a couple of perl programs, but the following shell scrip
 
 To run these scripts, you'll need a few tools installed on your Linux box. You can just try running it; it should exit gracefully and tell you if something is not installed.
 
-	1. wmctrl
-	
-		`sudo apt-get install wmctrl
-		
-	2. xdotool
-	
-		`sudo apt-get install xdotool
-		
-	3. perl Term::ReadKey (to use the remote tool)
-	
-		`sudo apt-get install libterm-readkey-perl
+1. wmctrl
 
-	4. Environment variables
+	`sudo apt-get install wmctrl
 	
-		The $DISPLAY and $XAUTHORITY variables need to be set; if you are opening up a terminal directly on your Ubuntu desktop, they will be set automatically. However, if you are using an ssh terminal to do you work (which I suggest that you do), they need to be explicitly set.
-		
-		I don't know all the details, but I was able to make it work fine by adding the following to my **.bashrc** file:
-		
-		`if [ -z "$DISPLAY" ]; then DISPLAY=:0; export DISPLAY; fi
-		`if [ -z "$XAUTHORITY" ]; then XAUTHORITY=/home/fritz/.Xauthority; export XAUTHORITY; fi
+2. xdotool
+
+	`sudo apt-get install xdotool
+	
+3. perl Term::ReadKey (to use the remote tool)
+
+	`sudo apt-get install libterm-readkey-perl
+
+4. Environment variables
+
+	The $DISPLAY and $XAUTHORITY variables need to be set; if you are opening up a terminal directly on your Ubuntu desktop, they will be set automatically. However, if you are using an ssh terminal to do you work (which I suggest that you do), they need to be explicitly set.
+	
+	I don't know all the details, but I was able to make it work fine by adding the following to my **.bashrc** file:
+	
+	`if [ -z "$DISPLAY" ]; then DISPLAY=:0; export DISPLAY; fi
+	`if [ -z "$XAUTHORITY" ]; then XAUTHORITY=/home/fritz/.Xauthority; export XAUTHORITY; fi
 
 ### Limitations and Caveats
 
