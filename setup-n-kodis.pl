@@ -22,6 +22,7 @@ my %specials;
 my %settings;
 
 ReadSettings ("settings");
+ReadSettings ("arrangements");
 
 my $margin_ratio = $settings{"margin_ratio"};
 my $window_ratio = $settings{"window_ratio"};
