@@ -2,20 +2,16 @@
 use POSIX;
 use Data::Dumper qw(Dumper);
 
-# todo: add 'kill' by number and 'kill all'
-
 my $debug = 0;
 
-#default
 my $num_kodis;
-
 my %kodis;
 
-my $special = 0;
 my $arrangement = "";
-my @spec;
+my @specs;
 my @specials_sort;
 my %specials_desc;
+my @displays;
 
 my $space_width;
 my $space_height;
@@ -36,6 +32,9 @@ my $reserve_bottom = $settings{"reserve_bottom"};
 my $reserve_left = $settings{"reserve_left"};
 my $reserve_right = $settings{"reserve_right"};
 
+my @arr = (1,2,3,4);
+debug_print (Dumper \@arr);
+
 debug_print ("Settings values:\n");
 while (($key, $value) = each %settings) {
 	debug_print ("$key: $value\n");
@@ -54,17 +53,35 @@ if (($ENV{'DISPLAY'} eq "") || ($ENV{'XAUTHORITY'} eq "")) {
 	exit;
 }
 
-my $output = `xdotool getwindowfocus`;
-my $startingwindow;
+my $output = `wmctrl -d`;
 
-if ($output =~ /^(\d+)$/) {
-	$startingwindow = $1;
+if ($output =~ /(\d+)x(\d+).*\s(\d+),(\d+)*\s(\d+)x(\d+).*/) {
+	$space_width = $5;
+	$space_height = $6;
+	$offset_width = $3 + ($reserve_left * $space_width);
+	$offset_height = $4 + ($reserve_top * $space_height);
+	$space_width = $space_width * (1 - $reserve_left - $reserve_right);
+	$space_height = $space_height * (1 - $reserve_top - $reserve_bottom);
+	$displays[0] = [($offset_width, $offset_height, $space_width, $space_height)];
 } else {
-	print "Couldn't interpret output from 'xdotool getwindowfocus'.\n";
+	print "Couldn't interpret output from 'wmctrl -d'.\n";
 	print "Most likely, it is not installed, so you might need to do something like:\n";
-	print "  sudo apt-get install xdotool\n";
+	print "  sudo apt-get install wmctrl\n";
 	exit ();
 }
+
+for ($i=0;$i<10;$i++) {
+	if (exists $settings{"display ".($i+1)}) {
+		if ($settings{"display ".($i+1)} =~ /^([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)$/) {
+			$displays[$i] = [($1,$2,$3,$4)];
+		} else {
+			print "Can't interpret dimensions of display ".($i+1)." in settings file.";
+		}
+	}
+}
+
+debug_print ("Displays:");
+debug_print (Dumper \@displays);
 
 my $list_arrs = 0;
 
@@ -72,27 +89,39 @@ $num_args = $#ARGV + 1;
 if ($num_args >= 1) {
 	$arg = $ARGV[0];
 	if ($arg eq "setup") {
-		$arg2 = $ARGV[1];
-		if (exists ($specials{$arg2})) {
-			# specify a window arrangement
-			$special = 1;
-			$arrangement = $arg2;
-			@spec = @{$specials{$arrangement}};
-			# first element in the array is the grid; the rest are the windows
-			$num_kodis = scalar (@spec)-1;
-		} elsif ($arg2 =~ /^(\d+)$/) {
-			# specify just the number of windows, arranged in grid
-			$num_kodis = $arg2;
-		} elsif ($arg2 =~ /^([+-])(\d+)$/) {
+		if (($num_args == 2) && ($ARGV[1] =~ /^([+-])(\d+)$/)) {
 			# increment or decrement number of kodis with +1, -2, etc
 			%kodis = FindKodis();
 			$num_kodis = keys %kodis;
 			if ($1 eq "+") { $num_kodis = $num_kodis + $2; }
 			if ($1 eq "-") { $num_kodis = $num_kodis - $2; }
 		} else {
-			print "Couldn't interpret what to set up.\n";
-			print "Should be a known window arrangement, +/-number, or just a number.\n";
-			$list_arrs = 1;
+			$num_kodis = 0;
+			$display = 0;
+			for ($i=1;$i<$num_args;$i++) {
+				if (!exists($displays[$display])) {
+					print "Display ".($display+1)." not defined in settings file. Extra arrangement ignored.\n";
+				} else {
+					$arg = $ARGV[$i];
+					$arrangement = $arg;
+					if ($arrangement =~ /^(\d+)$/) {
+						$num_kodis = $num_kodis + $1;
+						$specs[$display] = $1;
+					} elsif (exists ($specials{$arrangement})) {
+						$specs[$display] = [@{$specials{$arrangement}}];
+						$num_kodis = $num_kodis + scalar (@{$specials{$arrangement}})-1;
+					} else {
+						print "No special arrangement called '$arrangement'.\n";
+						print "Use argument 'list' to show the arrangements available.\n";
+						exit;
+					}
+					$display = $display + 1;
+				}
+			}
+			debug_print ("num kodis: $num_kodis\n");
+			debug_print ("specs:");
+			debug_print (Dumper \@specs);
+			#exit;
 		}
 	} elsif ($arg eq "swap") {
 		# swap the positions and titles of two windows
@@ -167,32 +196,67 @@ if ($list_arrs) {
 
 print "Setting up $num_kodis kodi";
 if ($num_kodis > 1) { print "s"; }
-if ($special) { print " using special arrangement '$arrangement'"; }
-else { print " in default arrangement"; }
 print ".\n";
 
-my $output = `wmctrl -d`;
+	if (0) {
+		# Bandaid: if you use wmctrl to take a kodi out of fullscreen, it doesn't rescale the contents
+		# But if you send a backslash, so that it brings itself out of fullscreen, it changes the window number
+		#   which plays havoc on my code which expects this to be a solid identifier.
+		# So here, if any are fullscreen, we just make them not, before rescanning for the window numbers
+		# It causes an ugly glitch, but it's better than the bug
+		# NOT ACTIVE: destroys the information about what the state of the windows were, which is important for swap
+		# This bug was addressed by setting maximized_vert and maximized_horz when using fullscreen (and perhaps the order in which they were set)
+		%kodis = FindKodis ();
+		foreach my $number (sort keys %kodis) {
+			my $window = $kodis{$number};
+			debug_print ("Fullscreen check: $window\n");
+			if (GetWindowState($window) eq "full") {
+				debug_print ("Full screen, sending backslash.\n");
+				# I don't know why just a keyup seems to work better than a full keypress or a keydown
+				# But the empirical results cannot be denied
+				# One factor may be that a keyup/keydown pair sends two operations, and the window number can change in between due to the keystroke's actions
+				RunCommand ("xdotool keyup --window $window backslash");
+			} else {
+				debug_print ("Not full screen.\n");
+			}
+		}
+	}
 
-if ($output =~ /(\d+)x(\d+).*\s(\d+),(\d+)*\s(\d+)x(\d+).*/) {
-	$space_width = $5;
-	$space_height = $6;
-	$offset_width = $3 + ($reserve_left * $space_width);
-	$offset_height = $4 + ($reserve_top * $space_height);
-	$space_width = $space_width * (1 - $reserve_left - $reserve_right);
-	$space_height = $space_height * (1 - $reserve_top - $reserve_bottom);
-	debug_print ("space width: $space_width\n");
-	debug_print ("space height: $space_height\n");
+my $output = `xdotool getwindowfocus`;
+my $startingwindow;
+
+if ($output =~ /^(\d+)$/) {
+	# Figure out which window is in focus, so we can restore it at the end
+	# BUT not if it's a Kodi window; these are focused based on the arrangement, and restoring the original one messes it up
+	# This is mainly for if the user is interacting through an onscreen terminal, so it doesn't get covered up by kodis every time
+	$startingwindow = sprintf("0x%x",$1);
+	debug_print ("Starting window: $startingwindow\n");
+	my $output = RunCommand ("wmctrl -l -G");
+	my @lines   = split /\n/ => $output;
+	my $found = 0;
+	for my $line (@lines) {
+		if ($line =~ /^([x0-9a-f]+)\s+\d+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\S+\s+(.*)$/) { 
+			my $name = $6;
+			my $window = $1;
+			# have to use 'hex' to make it a numerical comparison here
+			# because one comes from a string, and the other from the sprintf, so leading zeroes can be different
+			if ((hex($window) == hex($startingwindow)) && ($name =~ /Kodi/)) {
+				debug_print ("Starting window is a Kodi; won't be restored.\n");
+				$startingwindow = "false";
+			}
+		}
+	}
 } else {
-	print "Couldn't interpret output from 'wmctrl -d'.\n";
-	print "Most likely, it is not installed, so you might need to do something like:\n";
-	print "  sudo apt-get install wmctrl\n";
+	print "Couldn't interpret output from 'xdotool getwindowfocus'.\n";
+	print "Most likely, xdotool is not installed, so you might need to do something like:\n";
+	print "  sudo apt-get install xdotool\n";
 	exit ();
 }
 
 %kodis = FindKodis ();
 $kodisfound = keys %kodis;
 print "Found $kodisfound kodi";
-if ($kodisfound > 1) { print "s"; }
+if ($kodisfound != 1) { print "s"; }
 
 if ($kodisfound == $num_kodis) {
 	print ".\n";
@@ -237,103 +301,140 @@ sub PositionKodis {
 		
 		print "Positioning...\n";
 		
-		my $rows;
-		my $cols;
-
-		if ($special) {
-			if ($spec[0] =~ /(\d+)x(\d+)/) {
-				$cols = $1;
-				$rows = $2;
-			} else {
-				print "Couldn't interpret special dimension: ".$spec[0]."\n";
-				exit;
-			}
-		} else {
-			my $sq = ceil(sqrt($num_kodis));
-			$cols = $sq;
-			$rows = ceil($num_kodis/$cols);
-		}
-		
-		my $xmargin = $space_width * $margin_ratio;
-		my $ymargin = $space_height * $margin_ratio;
-		my $xstep = ($space_width - $xmargin) / $cols;
-		my $ystep = ($space_height - $ymargin) / $rows;
-		my $xorigin = $xmargin + $offset_width;
-		my $yorigin = $ymargin + $offset_height;
-		
-		debug_print ( "xmargin: $xmargin\n");
-		debug_print ( "ymargin: $ymargin\n");
-		debug_print ( "xstep: $xstep\n");
-		debug_print ( "ystep: $ystep\n");
-		debug_print ( "xorigin: $xorigin\n");
-		debug_print ( "yorigin: $yorigin\n");
-		
-		debug_print ( "cell width: ".($xstep-$xmargin)."\n");
-		debug_print ( "cell height: ".($ystep-$ymargin)."\n");
-
-		my $single_width = $xstep - $xmargin;
-		my $single_height = $ystep - $ymargin - $titlebar_height;
-		
-		# This next thing is to center up the cells. If we just centered each window in evenly divided cells, we end up with more space between cells than
-		#  on the edges, on whichever axis isn't completely full. So here we figure out which is full, figure out what the other will be,
-		#  and adjust the margins so that they take into account the extra space.
-
-		my $adj_height = $single_height / $window_ratio;
-		if ($single_width > $adj_height) {
-			# if scaled width is greater, use height
-			debug_print ("Limited by height.\n");
-			$xmargin = ($space_width - ($adj_height * $cols)) / ($cols + 1);
-			$xstep = $adj_height + $xmargin;
-			$xorigin = $xmargin + $offset_width;
-		} else {
-			# if scaled height is greater, use width
-			debug_print ("Limited by width.\n");
-			my $eff_height = ($single_width * $window_ratio) + $titlebar_height;
-			debug_print ("Effective height: ".$eff_height."\n");
-			$ymargin = ($space_height - ($eff_height * $rows)) / ($rows + 1);
-			$ystep = $eff_height + $ymargin;
-			$yorigin = $ymargin + $offset_height;
-			debug_print ("ymargin: $ymargin\n");
-			debug_print ("ystep: $ystep\n");
-			debug_print ("yorigin: $yorigin\n");
-		}
-
-		my $i=0;
-		my $col=0;
-		my $row=0;
-		my $pixels=0;
-		
+		my $pixels=0;		
 		my @maxed;
 
 		foreach my $number (sort keys %kodis) {
+		
+			debug_print ("Kodi number: $number\n");
 
-			$window = $kodis{$number};
-					
+			my $window = $kodis{$number};
+			
+			my $display=0;
+			my $accum=0;
+			while ($accum+GetWindowsInSpec($display) < $number) {
+				$accum = $accum + GetWindowsInSpec($display);
+				$display = $display + 1;
+			}
+			# $index is the number of this window within its display
+			my $index = $number - $accum;
+			
+			# $windows_in_display is how many windows there are on the current display
+			my $windows_in_display = GetWindowsInSpec($display);
+			
+			debug_print ("Display: $display\n");
+			debug_print ("Index: $index\n");
+			debug_print ("Windows in display: $windows_in_display\n");
+
+			my @spec = @{$specs[$display]};
+			debug_print ("display spec:");
+			debug_print (Dumper \@spec);
+
+			$special = 0;
+			if (ref ($specs[$display]) eq "ARRAY") { $special = 1; }
+			debug_print ("special: $special\n");
+			debug_print ("ref display:".ref($specs[$display])."\n");
+			debug_print ("ref spec:".ref($spec)."\n");
+
+			$offset_width = $displays[$display][0];
+			$offset_height = $displays[$display][1];
+			$space_width = $displays[$display][2];
+			$space_height = $displays[$display][3];
+			debug_print ("offset width: $offset_width\n");
+			debug_print ("offset height: $offset_height\n");
+			debug_print ("space width: $space_width\n");
+			debug_print ("space height: $space_height\n");
+		
+			my $rows;
+			my $cols;
+			
+			if ($special) {
+				if ($spec[0] =~ /(\d+)x(\d+)/) {
+					$cols = $1;
+					$rows = $2;
+				} else {
+					print "Couldn't interpret special dimension: ".$spec[0]."\n";
+					exit;
+				}
+			} else {
+				my $sq = ceil(sqrt($windows_in_display));
+				$cols = $sq;
+				$rows = ceil($windows_in_display/$cols);
+			}
+			
+			debug_print ("cols: $cols\n");
+			debug_print ("rows: $rows\n");
+			
+			my $xmargin = $space_width * $margin_ratio;
+			my $ymargin = $space_height * $margin_ratio;
+			my $xstep = ($space_width - $xmargin) / $cols;
+			my $ystep = ($space_height - $ymargin) / $rows;
+			my $xorigin = $xmargin + $offset_width;
+			my $yorigin = $ymargin + $offset_height;
+			
+			debug_print ( "xmargin: $xmargin\n");
+			debug_print ( "ymargin: $ymargin\n");
+			debug_print ( "xstep: $xstep\n");
+			debug_print ( "ystep: $ystep\n");
+			debug_print ( "xorigin: $xorigin\n");
+			debug_print ( "yorigin: $yorigin\n");
+			
+			debug_print ( "cell width: ".($xstep-$xmargin)."\n");
+			debug_print ( "cell height: ".($ystep-$ymargin)."\n");
+
+			my $single_width = $xstep - $xmargin;
+			my $single_height = $ystep - $ymargin - $titlebar_height;
+			
+			# This next thing is to center up the cells. If we just centered each window in evenly divided cells, we end up with more space between cells than
+			#  on the edges, on whichever axis isn't completely full. So here we figure out which is full, figure out what the other will be,
+			#  and adjust the margins so that they take into account the extra space.
+
+			my $adj_height = $single_height / $window_ratio;
+			if ($single_width > $adj_height) {
+				# if scaled width is greater, use height
+				debug_print ("Limited by height.\n");
+				$xmargin = ($space_width - ($adj_height * $cols)) / ($cols + 1);
+				$xstep = $adj_height + $xmargin;
+				$xorigin = $xmargin + $offset_width;
+				debug_print ("xmargin: $xmargin\n");
+				debug_print ("xstep: $xstep\n");
+				debug_print ("xorigin: $xorigin\n");
+			} else {
+				# if scaled height is greater, use width
+				debug_print ("Limited by width.\n");
+				my $eff_height = ($single_width * $window_ratio) + $titlebar_height;
+				debug_print ("Effective height: ".$eff_height."\n");
+				$ymargin = ($space_height - ($eff_height * $rows)) / ($rows + 1);
+				$ystep = $eff_height + $ymargin;
+				$yorigin = $ymargin + $offset_height;
+				debug_print ("ymargin: $ymargin\n");
+				debug_print ("ystep: $ystep\n");
+				debug_print ("yorigin: $yorigin\n");
+			}
+				
 			my $type,$cell_row,$cell_col,$cell_width,$cell_height;
 
 			if ($special) {
-				my $s = $i+1;
-				debug_print ("s:".$s."\n");
-				debug_print ("spec: ".$spec[$s]."\n");
-				if ($spec[$s] =~ /^([0-9.]+),([0-9.]+),([0-9.]+),([0-9.]+)$/) {
+				debug_print ("window spec: ".$spec[$index]."\n");
+				if ($spec[$index] =~ /^([0-9.]+),([0-9.]+),([0-9.]+),([0-9.]+)$/) {
 					$type = "Norm";
 					$cell_col = $1;
 					$cell_row = $2;
 					$cell_width = $3;
 					$cell_height = $4;
-				} elsif ((lc($spec[$s]) eq "full") || (lc($spec[$s]) eq "max")) {
-					$type = $spec[$s];
-					if (lc($spec[$s]) eq "max") {
+				} elsif ((lc($spec[$index]) eq "full") || (lc($spec[$index]) eq "max")) {
+					$type = $spec[$index];
+					if (lc($spec[$index]) eq "max") {
 						push (@maxed,$window);
 					}
 				} else {
-					print "Couldn't interpret window dimensions: ".$spec[$s]."\n";
+					print "Couldn't interpret window dimensions: ".$spec[$index]."\n";
 					exit;
 				}
 			} else {
 				$type = "Norm";
-				$cell_col = $col;
-				$cell_row = $row;
+				$cell_col = ($index - 1) % $cols;
+				$cell_row = int (($index - 1) / $cols);
 				$cell_width = 1;
 				$cell_height = 1;
 			}
@@ -345,7 +446,14 @@ sub PositionKodis {
 			my $y = $yorigin + $ystep * $cell_row;
 			my $w = $avail_width;
 			my $h = $avail_height;
-			
+	
+			if ($type ne "Norm") {
+				$x = $offset_width;
+				$y = $offset_height;
+				$w = $space_width;
+				$h = $space_height;
+			}
+		
 			if ($type eq "Norm") {
 				
 				debug_print ( "cell width: $w\n");
@@ -375,22 +483,16 @@ sub PositionKodis {
 				debug_print ("selected x: $x\n");
 				debug_print ("selected y: $y\n");
 
-				if (!$special && ($row == $rows-1)) {
-					if ($num_kodis % $cols != 0) {
-						$x = $x + $xstep*($cols-($num_kodis%$cols))/2;
+				if (!$special && ($cell_row == $rows-1)) {
+					if ($windows_in_display % $cols != 0) {
+						$x = $x + $xstep*($cols-($windows_in_display%$cols))/2;
 					}
 				}
 			}
 
-			PositionWindow ("Kodi ".($i+1),$window,$type,$x,$y,$w,$h);
+			PositionWindow ("Kodi ".($number),$window,$type,$x,$y,$w,$h);
 			$pixels = $pixels + ($w * $h);
 					
-			$i = $i + 1;
-			$col = $col + 1;
-			if ($col == $cols) {
-				$row = $row + 1;
-				$col = 0;
-			}
 		}
 		
 		# set focus to where it was before we started, unless said window is maximized
@@ -399,7 +501,8 @@ sub PositionKodis {
 		foreach my $m (@maxed) {
 			if ($startingwindow eq hex($m)) { $ismax = 1; }
 		}
-		if (!$ismax) {
+		if ((!$ismax) && ($startingwindow ne "false")) {
+			debug_print ("Touching starting window $startingwindow\n");
 			RunCommand ("wmctrl -i -a ".$startingwindow);
 		}
 			
@@ -408,20 +511,61 @@ sub PositionKodis {
 	}
 }
 
+sub GetWindowsInSpec {
+	my ($spec) = @_;
+	if (ref ($specs[$spec]) eq "ARRAY") { return (scalar(@{$specs[$spec]})-1); }
+	else { return $specs[$spec]; }
+}
+
 sub PositionWindow {
 	my ($name,$window, $type, $x, $y, $width, $height) = @_;
+	my $coords = int($x).",".int($y).",".int($width).",".int($height);
+	debug_print ("Positioning $window\n");
 	if (lc($type) eq "full") {
+		RunCommand ("wmctrl -i -r $window -b add,maximized_vert");
+		RunCommand ("wmctrl -i -r $window -b add,maximized_horz");	
+		RunCommand ("wmctrl -i -r $window -e 0,$coords");
 		RunCommand ("wmctrl -i -r $window -b add,fullscreen");
-		RunCommand ("wmctrl -i -r $window -b remove,maximized_vert");
-		RunCommand ("wmctrl -i -r $window -b remove,maximized_horz");	
+		# invalidate the starting window, so it won't attempt to restore it later
+		# and mess up our full screening
+		$startingwindow = "false";
 	} elsif (lc($type) eq "max") {
-		RunCommand ("wmctrl -i -r $window -b remove,fullscreen");
 		RunCommand ("wmctrl -i -r $window -b add,maximized_vert");
 		RunCommand ("wmctrl -i -r $window -b add,maximized_horz");
-	} elsif (lc($type) eq "norm") {
-		my $coords = int($x).",".int($y).",".int($width).",".int($height);
-		debug_print ("Positioning $window\n");
 		RunCommand ("wmctrl -i -r $window -b remove,fullscreen");
+		RunCommand ("wmctrl -i -r $window -e 0,$coords");
+	} elsif (lc($type) eq "norm") {
+		if (0) {
+			# NOT ACTIVE, caused big errors because the window numbers change when you backslash
+			# Kodi seems to have a bug wherein if we just remove the fullscreen attribute using wmctrl
+			#  it doesn't rescale itself properly. So here is a workaround, if it needs to be de-fullscreened
+			#  we let Kodi do it; it seems to prefer it that way.
+			# This bug was addressed by setting maximized_vert and maximized_horz when using fullscreen (and perhaps the order in which they were set)
+			if (GetWindowState($window) eq "full") {
+				debug_print ("Window $window is fullscreen, sending backslash.\n");
+				RunCommand ("xdotool keydown --window $window backslash");
+				# For some reason when we do that, it changes to a new window number, so now we have to find that...
+				sleep (5);
+				my $output = RunCommand ("wmctrl -l -G");
+				my @lines   = split /\n/ => $output;
+				my $found = 0;
+				for my $line (@lines) {
+					if ($line =~ /^([x0-9a-f]+)\s+\d+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\S+\s+(.*)$/) { 
+						if (($6 eq $name) || ($6 eq "Kodi")) {
+							debug_print ("Found it: $1\n");
+							$window = $1;
+							$found = 1;
+						}
+					}
+				}
+				if (!$found) {
+					print "Couldn't relocate window '$name' after backslash operation.\n";
+					exit;
+				}
+			}
+		}
+		RunCommand ("wmctrl -i -r $window -b remove,fullscreen");
+		RunCommand ("wmctrl -i -r $window -e 0,$coords");
 		RunCommand ("wmctrl -i -r $window -b remove,maximized_vert");
 		RunCommand ("wmctrl -i -r $window -b remove,maximized_horz");
 		RunCommand ("wmctrl -i -r $window -e 0,$coords");
@@ -448,6 +592,11 @@ sub RunCommand {
 	debug_print ($output);
 	return $output;
 }
+
+sub SendKey {
+	($window,$send) = @_;
+	RunCommand ("xdotool key --window $window $send");
+}	
 
 sub FindKodis {
 	my %kodis = ();
@@ -487,16 +636,32 @@ sub debug_print {
 	if ($debug) { print @_; }
 }
 
+sub FindUnnumberedKodi {
+	debug_print ("Find unnumbered kodi.\n");
+	my $output = RunCommand ("wmctrl -l -G");
+	my @lines   = split /\n/ => $output;
+	for my $line (@lines) {
+		if ($line =~ /^([x0-9a-f]+)\s+\d+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+.*Kodi$/) { 
+			debug_print ("Found it: $1\n");
+			return $1;
+		}
+	}
+	debug_print ("Didn't find it.\n");
+	return 0;
+}
+
 sub SwapWindows {
 	my ($swapA,$swapB) = @_;
 	print "Swapping $swapA and $swapB.\n";
 	my %kodis = ();
-	$output = RunCommand ("wmctrl -l -G");
+	my $output = RunCommand ("wmctrl -l -G");
 	my @lines   = split /\n/ => $output;
 	my $windowA, $xA, $yA, $wA, $hA;
 	my $windowB, $xB, $yB, $wB, $hB;
+	my $windowZ, $xZ, $yZ, $wZ, $hZ;
 	my $foundA = 0;
 	my $foundB = 0;
+	my $foundZ = 0;
 	for my $line (@lines) {
 		if ($line =~ /^([x0-9a-f]+)\s+\d+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+.*Kodi\s(\d+)/) { 
 			if ($6 == $swapA) {
@@ -506,16 +671,38 @@ sub SwapWindows {
 				($foundB, $windowB, $xB, $yB, $wB, $hB) = (1, $1, $2, $3, $4, $5);
 			}
 		}
+		# workaround: when you full-size a window, from Kodi itself, it seems to lose its programmed name, reverting to "Kodi"
+		# so we look for those, and if we find one, store it away as Z
+		if ($line =~ /^([x0-9a-f]+)\s+\d+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+.*Kodi$/) { 
+			($foundZ, $windowZ, $xZ, $yZ, $wZ, $hZ) = (1, $1, $2, $3, $4, $5);		
+		}
 	}
+	
+	# workaround: see above
+	# if we didn't find one of the windows we were looking for, but we found one with just the name "Kodi", assume that is it
+	if ($foundA && !$foundB && $foundZ) { ($foundB, $windowB, $xB, $yB, $wB, $hB) = ($foundZ, $windowZ, $xZ, $yZ, $wZ, $hZ); }
+	if (!$foundA && $foundB && $foundZ) { ($foundA, $windowA, $xA, $yA, $wA, $hA) = ($foundZ, $windowZ, $xZ, $yZ, $wZ, $hZ); }
+	
 	if (!$foundA) { print "Couldn't find window called 'Kodi $swapA'.\n";}
 	if (!$foundB) { print "Couldn't find window called 'Kodi $swapB'.\n";}
 	if (!$foundA || !$foundB) { exit; }
 	
-	PositionWindow ("Kodi ".$swapA, $windowB, "norm", $xA, $yA-$titlebar_height, $wA, $hA);
-	PositionWindow ("Kodi ".$swapB, $windowA, "norm", $xB, $yB-$titlebar_height, $wB, $hB);
+	my $stA = GetWindowState ($windowA);
+	my $stB = GetWindowState ($windowB);
+	
+	PositionWindow ("Kodi ".$swapB, $windowA, $stB, $xB, $yB-$titlebar_height, $wB, $hB);
+	PositionWindow ("Kodi ".$swapA, $windowB, $stA, $xA, $yA-$titlebar_height, $wA, $hA);
 	
 	return %kodis;
 	
+}
+
+sub GetWindowState {
+	my ($windowID) = @_;
+	my $output = RunCommand ("xprop -id $windowID _NET_WM_STATE");
+	if ($output =~ / _NET_WM_STATE_FULLSCREEN/) { return "full"; }
+	if (($output =~ /_NET_WM_STATE_MAXIMIZED_VERT/) && ($output =~ /_NET_WM_STATE_MAXIMIZED_HORZ/)) { return "max"; }
+	return "norm";
 }
 
 sub ReadSettings {
@@ -536,6 +723,8 @@ sub ReadSettings {
 			$settings{$1} = $2;
 		}
 	}
+	debug_print ("Settings:\n");
+	debug_print (Dumper \%settings);
 }
 
 sub AddSpecial {
