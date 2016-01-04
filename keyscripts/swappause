@@ -1,0 +1,8 @@
+
+# This is for, for example, watching TV in window 1, and during the commercials, watching recorded video material from another window
+# So when the commercial comes on, use swapplay to swap the pictures, mute the TV audio, and play the recording
+# use this script at the end of the commercial to pause the recorded material and go back to TV
+
+1 space
+2 F8
+> swap 1 2

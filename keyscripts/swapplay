@@ -1,0 +1,8 @@
+
+# This is for, for example, watching TV in window 1, and during the commercials, watching recorded video material from another window
+# So when the commercial comes on, swap the pictures, mute the TV audio, and play the recording
+# use swappause at the end of the commercial
+
+1 F8
+2 space
+> swap 1 2

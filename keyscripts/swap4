@@ -1,0 +1,7 @@
+
+# Swaps the positions of windows 1 and 2; also swaps the mute 
+# (so it switches the one you're watching, especially in a pip or multi-display situation)
+
+1 F8
+4 F8
+> swap 1 4

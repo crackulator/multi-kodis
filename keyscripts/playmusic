@@ -1,0 +1,7 @@
+
+# This is for a case where you are watching something on TV in Kodi 1, and playing music on Kodi 2 (for example, with picture-in-picture)
+# During the commercial, you want to mute the TV picture, and play the music; when the commercial is over, pause the music and go back to TV.
+# This should work for both coming and going.
+
+1 F8
+2 space
