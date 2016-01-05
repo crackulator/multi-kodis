@@ -51,7 +51,11 @@ All the work is done by a couple of perl programs, but the following shell scrip
 
 	When used with no arguments, controls any or all of your Kodi windows. Use number keys (1-9) to select which windows to control, cursor keys and others to send controls to those windows. Only certain keystrokes are supported, but more could be added.
 	
+	`remote` - start interactive tool to send keystrokes to any or all of your Kodi windows
+	
 	You can also supply an argument, which is a script to be run from the 'keyscripts' folder, to automate multi-kodi operations that you do repeatedly, such as swapping windows along with their audio. See the files in 'keyscripts' for examples. You can send commands to any of your Kodis by number, and also execute shell commands from those scripts to do things like swapping or changing window arrangements.
+	
+	`remote swap2` - run the keyscript 'swap2', which swaps two windows and mutes/unmutes audio
 
 ### Requirements
 
@@ -95,7 +99,7 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 	display 2 = 1921,1081,1280,720
 	```
 	
-	... and that will almost work, but not quite, because you need to allow for things like the title bar at the top of both windows, and perhaps Unity on the left (depending on your setup). So you'll probably end up with something more like:
+	...and that will almost work, but not quite, because you need to allow for things like the title bar at the top of both windows, and perhaps Unity on the left (depending on your setup). So you'll probably end up with something more like:
 	
 	``` 
 	display 1 = 65,50,1855,1030
@@ -117,7 +121,7 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 	* A 'reserve area' to be applied around any or all edges of the screen.
 	* Declare the height of the window's title bar in pixels (depends on your interface configuration). This setting doesn't change the height of the title bars; it is an offset that needs to be applied to some of the calculations, so newly-created Kodi windows may have incorrect heights. You may need to do this if you are using non-default gui parameters.
 	* The delays between certain actions, such as between opening a Kodi and moving it.
-	* For multiple-display systems, you need to define where each display exists in the workspace
+	* For multiple-display systems, you need to define where each display exists in the workspace.
 		
 	The settings file has documentation for each setting; view it for details.
 	
