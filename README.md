@@ -73,11 +73,11 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 
 	The $DISPLAY and $XAUTHORITY variables need to be set; if you are opening up a terminal directly on your Ubuntu desktop, they will be set automatically. However, if you are using an ssh terminal to do you work (which I suggest that you do), they need to be explicitly set.
 	
-	I don't know all the details, but I was able to make it work fine by adding the following to my **.bashrc** file:
+	I don't know how all this is supposed to work, but I was able to make it work for ssh by adding the following to my **.bashrc** file (note you must fill in your own user name for [user]):
 	
 	```
 	if [ -z "$DISPLAY" ]; then DISPLAY=:0; export DISPLAY; fi
-	if [ -z "$XAUTHORITY" ]; then XAUTHORITY=/home/fritz/.Xauthority; export XAUTHORITY; fi
+	if [ -z "$XAUTHORITY" ]; then XAUTHORITY=/home/[user]/.Xauthority; export XAUTHORITY; fi
 	```
 
 ### User-configurable files
