@@ -117,6 +117,7 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 	* A 'reserve area' to be applied around any or all edges of the screen.
 	* Declare the height of the window's title bar in pixels (depends on your interface configuration). This setting doesn't change the height of the title bars; it is an offset that needs to be applied to some of the calculations, so newly-created Kodi windows may have incorrect heights. You may need to do this if you are using non-default gui parameters.
 	* The delays between certain actions, such as between opening a Kodi and moving it.
+	* For multiple-display systems, you need to define where each display exists in the workspace
 		
 	The settings file has documentation for each setting; view it for details.
 	
