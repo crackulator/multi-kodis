@@ -80,6 +80,30 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 	if [ -z "$XAUTHORITY" ]; then XAUTHORITY=/home/[user]/.Xauthority; export XAUTHORITY; fi
 	```
 
+6. For multi-display use
+
+	Note: if you're using just one display, ignore this. The default configuration should work just fine, and already accounts for most of these concerns.
+
+	If you're using multiple displays, you will need to set the "display 1", "display 2", etc., variables in the settings file. By default, the setup script assumes that only one display is present, and wmctrl reports its dimensions. But when you have multiple displays, wmctrl reports them all together as one big rectangle. So you need to tell the tool which displays are where within that rectangle.
+	
+	It's pretty easy to determine manually what the settings should be; just use Dash to open "Displays" on your desktop. You'll see how all your monitors are arranged, and from that you can infer where each display begins, and its size.
+	
+	For example, if you have a 1920x1080 (1080p) main display, and a 1280x720 (720p) display just below it and aligned with its left edge, you might guess that you want these entries in your settings file:
+	
+	``` 
+	display 1 = 0,0,1920,1080
+	display 2 = 1921,1081,1280,720
+	```
+	
+	... and that will almost work, but not quite, because you need to allow for things like the title bar at the top of both windows, and perhaps Unity on the left (depending on your setup). So you'll probably end up with something more like:
+	
+	``` 
+	display 1 = 65,50,1855,1030
+	display 2 = 0,1131,1280,670
+	```
+	
+	You can test your multi-display configuration using `setup 1 1`; and you should get one Kodi on each display, sized to fill most of the display minus margins, and adjust to taste.
+
 ### User-configurable files
 
 1. settings
