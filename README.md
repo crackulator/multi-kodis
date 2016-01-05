@@ -55,7 +55,7 @@ All the work is done by a couple of perl programs, but the following shell scrip
 
 ### Requirements
 
-To run these scripts, you'll need a few tools installed on your Linux box. You can just try running it; it should exit gracefully and tell you if something is not installed.
+To run these scripts, you'll need a few tools installed on your Linux box. You can just try running it; it should exit gracefully and tell you if something is not installed. But you will usually need to do the following.
 
 1. wmctrl
 
@@ -76,6 +76,7 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 	I don't know all the details, but I was able to make it work fine by adding the following to my **.bashrc** file:
 	
 	`if [ -z "$DISPLAY" ]; then DISPLAY=:0; export DISPLAY; fi`
+	
 	`if [ -z "$XAUTHORITY" ]; then XAUTHORITY=/home/fritz/.Xauthority; export XAUTHORITY; fi`
 
 ### User-configurable files
@@ -86,11 +87,11 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 	
 	Things you can control in this file:
 	
-		1. Amount of space (margins) enforced between your Kodi windows
-		2. Aspect ratio of newly-created Kodis (usually 16:9)
-		3. A 'reserve area' to be applied around any or all edges of the screen.
-		4. Declare the height of the window's title bar in pixels (depends on your interface configuration). This setting doesn't change the height of the title bars; it is an offset that needs to be applied to some of the calculations, so newly-created Kodi windows may have incorrect heights. You may need to do this if you are using non-default gui parameters.
-		5. The delays between certain actions, such as between opening a Kodi and moving it.
+	* Amount of space (margins) enforced between your Kodi windows
+	* Aspect ratio of newly-created Kodis (usually 16:9)
+	* A 'reserve area' to be applied around any or all edges of the screen.
+	* Declare the height of the window's title bar in pixels (depends on your interface configuration). This setting doesn't change the height of the title bars; it is an offset that needs to be applied to some of the calculations, so newly-created Kodi windows may have incorrect heights. You may need to do this if you are using non-default gui parameters.
+	* The delays between certain actions, such as between opening a Kodi and moving it.
 		
 	The settings file has documentation for each setting; view it for details.
 	
@@ -110,7 +111,7 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 	
 	You can also use the scripts to send shell commands, by starting the line with a greater-than symbol:
 	
-	`> swap 1 2`   # send a shell command to swap Kodi 1 with Kodi 2
+	`> swap 1 2` - send a shell command to swap Kodi 1 with Kodi 2
 
 ### Limitations and Caveats
 
