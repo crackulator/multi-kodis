@@ -84,7 +84,7 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 
 	Note: if you're using just one display, ignore this. The default configuration should work just fine, and already accounts for most of these concerns.
 
-	If you're using multiple displays, you will need to set the "display 1", "display 2", etc., variables in the settings file. By default, the setup script assumes that only one display is present, and wmctrl reports its dimensions. But when you have multiple displays, wmctrl reports them all together as one big rectangle. So you need to tell the tool which displays are where within that rectangle.
+	If you're using multiple displays, you will need to set the `display 1`, `display 2`, etc., variables in the `settings` file. By default, the setup script assumes that only one display is present, and wmctrl reports its dimensions. But when you have multiple displays, wmctrl reports them all together as one big rectangle. So you need to tell the tool which displays are where, within that rectangle. Each display must be defined by `x,y,width,height` in pixels.
 	
 	It's pretty easy to determine manually what the settings should be; just use Dash to open "Displays" on your desktop. You'll see how all your monitors are arranged, and from that you can infer where each display begins, and its size.
 	
