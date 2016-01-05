@@ -23,7 +23,7 @@ All the work is done by a couple of perl programs, but the following shell scrip
 		`setup 6` - set up 6 Kodi windows in a default grid
 		`setup 5s` - set up 5 Kodi windows in a predefined arrangement
 
-		`setup 2 5s` - set up 5 Kodi windows on one display, and a 5s arrangement on the other
+		`setup 2 5s` - set up 5 Kodi windows on display 1, and a 5s arrangement on display 2
 
 	When you use multiple displays, wmctrl views your whole desktop as one rectangle, so you need to define where each of your displays resides within the rectangle. See the settings file, the 'display' keyword, for details.
 
@@ -75,9 +75,10 @@ To run these scripts, you'll need a few tools installed on your Linux box. You c
 	
 	I don't know all the details, but I was able to make it work fine by adding the following to my **.bashrc** file:
 	
-	`if [ -z "$DISPLAY" ]; then DISPLAY=:0; export DISPLAY; fi`
-	
-	`if [ -z "$XAUTHORITY" ]; then XAUTHORITY=/home/fritz/.Xauthority; export XAUTHORITY; fi`
+	```
+	if [ -z "$DISPLAY" ]; then DISPLAY=:0; export DISPLAY; fi
+	if [ -z "$XAUTHORITY" ]; then XAUTHORITY=/home/fritz/.Xauthority; export XAUTHORITY; fi
+	```
 
 ### User-configurable files
 
